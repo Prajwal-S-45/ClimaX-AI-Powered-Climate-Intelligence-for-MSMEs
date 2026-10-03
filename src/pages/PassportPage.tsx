@@ -1,61 +1,26 @@
-import React, { useState, useEffect } from 'react';
+import React, { useState } from 'react';
 import {
   FileCheck2,
-  Download,
   Share2,
   ShieldCheck,
   QrCode,
   Building2,
   MapPin,
-  Award,
   CheckCircle2,
   Clock,
   DollarSign,
-  Droplets,
   Flame,
   AlertCircle,
-  Sparkles,
-  ExternalLink,
   Printer,
-  Copy,
   Check
 } from 'lucide-react';
-import { Card, Badge, Button, StatusBadge, RiskBadge } from '../components/ui';
-import { OnboardingFormData } from '../types';
+import { Card, Badge, Button, RiskBadge } from '../components/ui';
+import { useClimate } from '../context/ClimateContext';
 import { formatCurrencyINR } from '../utils/helpers';
 
-const defaultProfile: OnboardingFormData = {
-  businessName: 'Shakti Precision Components',
-  businessType: 'Private Limited',
-  industry: 'Manufacturing',
-  location: 'Bengaluru, Karnataka',
-  yearsOperating: 8,
-  numberOfEmployees: 28,
-  monthlyElectricityBillINR: 78000,
-  monthlyWaterConsumptionLitres: 85000,
-  monthlyFuelExpenseINR: 22000,
-  operatingHoursPerDay: 10,
-  workingDaysPerMonth: 26,
-  climateConcerns: ['Extreme heat', 'Rising energy costs', 'Water scarcity'],
-  availableBudgetINR: 300000,
-  preferredHorizonYears: 5,
-  maxPaybackPeriodYears: 4,
-};
-
 export const PassportPage: React.FC = () => {
-  const [profile, setProfile] = useState<OnboardingFormData>(defaultProfile);
+  const { profile, activeBundle } = useClimate();
   const [copied, setCopied] = useState<boolean>(false);
-
-  useEffect(() => {
-    try {
-      const saved = localStorage.getItem('msme_climate_profile');
-      if (saved) {
-        setProfile({ ...defaultProfile, ...JSON.parse(saved) });
-      }
-    } catch (e) {
-      console.error('Error loading profile in passport:', e);
-    }
-  }, []);
 
   const handlePrint = () => {
     window.print();
@@ -101,7 +66,7 @@ export const PassportPage: React.FC = () => {
           <div>
             <h1 className="text-2xl font-bold text-slate-900">Climate Action Passport</h1>
             <p className="text-xs text-slate-500">
-              Formal digital project certificate for sustainability planning, banks, and supply chain audits.
+              Finance-ready digital project certificate for sustainability planning and supply chain audits.
             </p>
           </div>
         </div>
@@ -251,40 +216,34 @@ export const PassportPage: React.FC = () => {
           <div className="p-4 bg-slate-900 text-white rounded-2xl space-y-3">
             <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-2 border-b border-slate-800 pb-2">
               <div>
-                <span className="text-[11px] font-bold text-emerald-400 uppercase tracking-wider">Project Name</span>
+                <span className="text-[11px] font-bold text-emerald-400 uppercase tracking-wider">Active Bundle Title</span>
                 <h4 className="text-base font-extrabold text-white">
-                  Balanced MSME Climate Decarbonization & Resilience Plan
+                  {activeBundle.title}
                 </h4>
               </div>
               <div className="text-right">
                 <span className="text-[11px] text-slate-400 block">Total Investment Required</span>
                 <span className="text-lg font-extrabold text-emerald-400">
-                  {formatCurrencyINR(280000)}
+                  {formatCurrencyINR(activeBundle.metrics.totalInvestment)}
                 </span>
               </div>
             </div>
 
             <div className="space-y-2">
-              <span className="text-[11px] font-semibold text-slate-300 block">Bundled Interventions:</span>
+              <span className="text-[11px] font-semibold text-slate-300 block">Included Interventions ({activeBundle.items.length}):</span>
               <div className="grid grid-cols-1 sm:grid-cols-3 gap-2 text-xs">
-                <div className="p-2.5 bg-slate-800 rounded-xl border border-slate-700">
-                  <span className="font-semibold text-white block">1. LED Lighting Retrofit</span>
-                  <span className="text-[11px] text-slate-400">Capex: ₹65,000</span>
-                </div>
-                <div className="p-2.5 bg-slate-800 rounded-xl border border-slate-700">
-                  <span className="font-semibold text-white block">2. Cool Roof Thermal Coating</span>
-                  <span className="text-[11px] text-slate-400">Capex: ₹95,000</span>
-                </div>
-                <div className="p-2.5 bg-slate-800 rounded-xl border border-slate-700">
-                  <span className="font-semibold text-white block">3. IE4 Super-Premium Motors</span>
-                  <span className="text-[11px] text-slate-400">Capex: ₹1,20,000</span>
-                </div>
+                {activeBundle.items.map((item, idx) => (
+                  <div key={item.id} className="p-2.5 bg-slate-800 rounded-xl border border-slate-700">
+                    <span className="font-semibold text-white block">{idx + 1}. {item.name}</span>
+                    <span className="text-[11px] text-slate-400">Capex: {formatCurrencyINR(item.estimatedInvestment)}</span>
+                  </div>
+                ))}
               </div>
             </div>
 
             <div className="flex justify-between items-center text-xs pt-1 text-slate-400">
               <span>Implementation Timeline Target: <strong className="text-white">6 Weeks</strong></span>
-              <span>Projected Payback: <strong className="text-emerald-400">1.6 Years</strong></span>
+              <span>Projected Payback: <strong className="text-emerald-400">{activeBundle.metrics.avgPayback} Years</strong></span>
             </div>
           </div>
         </div>
@@ -301,15 +260,15 @@ export const PassportPage: React.FC = () => {
             <div className="p-4 bg-emerald-50/50 border border-emerald-200 rounded-2xl space-y-2.5 text-xs">
               <div className="flex justify-between items-center">
                 <span className="text-slate-600">Expected Annual Operating Savings:</span>
-                <span className="font-extrabold text-emerald-700 text-sm">{formatCurrencyINR(174000)} / yr</span>
+                <span className="font-extrabold text-emerald-700 text-sm">{formatCurrencyINR(activeBundle.metrics.annualSavings)} / yr</span>
               </div>
               <div className="flex justify-between items-center">
                 <span className="text-slate-600">Estimated Payback Period:</span>
-                <span className="font-bold text-slate-900">1.6 Years</span>
+                <span className="font-bold text-slate-900">{activeBundle.metrics.avgPayback} Years</span>
               </div>
               <div className="flex justify-between items-center border-t border-emerald-200/80 pt-2">
                 <span className="text-slate-700 font-semibold">5-Year Cumulative Savings:</span>
-                <span className="font-extrabold text-slate-900 text-base">{formatCurrencyINR(870000)}</span>
+                <span className="font-extrabold text-slate-900 text-base">{formatCurrencyINR(activeBundle.metrics.annualSavings * 5)}</span>
               </div>
             </div>
           </div>
@@ -324,18 +283,20 @@ export const PassportPage: React.FC = () => {
             <div className="p-4 bg-teal-50/50 border border-teal-200 rounded-2xl space-y-2.5 text-xs">
               <div className="flex justify-between items-center">
                 <span className="text-slate-600">Estimated CO₂ Reduction:</span>
-                <span className="font-extrabold text-teal-700 text-sm">28.5 tCO₂e / year</span>
+                <span className="font-extrabold text-teal-700 text-sm">{activeBundle.metrics.co2Reduction} tCO₂e / year</span>
               </div>
               <div className="flex justify-between items-center">
                 <span className="text-slate-600">Estimated Water Savings:</span>
-                <span className="font-bold text-slate-900">120,000 Litres / year</span>
+                <span className="font-bold text-slate-900">
+                  {activeBundle.metrics.waterSavings > 0 ? `${activeBundle.metrics.waterSavings.toLocaleString()} Litres / year` : 'N/A'}
+                </span>
               </div>
               <div className="flex justify-between items-center border-t border-teal-200/80 pt-2">
                 <span className="text-slate-700 font-semibold">Risks Addressed:</span>
                 <div className="flex gap-1 flex-wrap">
-                  <Badge variant="teal" size="sm">Energy</Badge>
-                  <Badge variant="emerald" size="sm">Heat</Badge>
-                  <Badge variant="blue" size="sm">Water</Badge>
+                  {activeBundle.metrics.risks.map((r) => (
+                    <Badge key={r} variant="teal" size="sm">{r}</Badge>
+                  ))}
                 </div>
               </div>
             </div>
@@ -357,7 +318,7 @@ export const PassportPage: React.FC = () => {
             </div>
             <div className="p-3 bg-white border border-slate-200 rounded-xl space-y-1">
               <span className="text-[10px] font-bold text-purple-600 uppercase tracking-wider">Phase 2 — Procurement</span>
-              <h5 className="font-bold text-slate-900">Vendor & SIDBI Subsidy</h5>
+              <h5 className="font-bold text-slate-900">Vendor & Subsidies</h5>
               <p className="text-[11px] text-slate-500">Week 3 – Week 4</p>
             </div>
             <div className="p-3 bg-white border border-slate-200 rounded-xl space-y-1">
@@ -377,7 +338,7 @@ export const PassportPage: React.FC = () => {
         <div className="space-y-3">
           <h3 className="text-xs font-extrabold text-slate-900 uppercase tracking-wider border-b border-slate-100 pb-1 flex items-center gap-2">
             <FileCheck2 className="w-4 h-4 text-emerald-600" />
-            7. Bank Verification Evidence Checklist
+            7. Finance Verification Evidence Checklist
           </h3>
 
           <div className="space-y-2 text-xs">
@@ -386,7 +347,7 @@ export const PassportPage: React.FC = () => {
                 <CheckCircle2 className="w-4 h-4 text-emerald-600 flex-shrink-0" />
                 <span className="font-semibold text-slate-800">Business registration documents (GST, Udyam MSME Certificate)</span>
               </div>
-              <Badge variant="emerald" size="sm">Verified</Badge>
+              <Badge variant="teal" size="sm">Demo Record</Badge>
             </div>
 
             <div className="p-3 bg-emerald-50/60 border border-emerald-200 rounded-xl flex items-center justify-between">
@@ -394,7 +355,7 @@ export const PassportPage: React.FC = () => {
                 <CheckCircle2 className="w-4 h-4 text-emerald-600 flex-shrink-0" />
                 <span className="font-semibold text-slate-800">Project quotation & vendor technology specifications</span>
               </div>
-              <Badge variant="emerald" size="sm">Verified</Badge>
+              <Badge variant="teal" size="sm">Demo Record</Badge>
             </div>
 
             <div className="p-3 bg-slate-50 border border-slate-200 rounded-xl flex items-center justify-between text-slate-500">
@@ -430,7 +391,7 @@ export const PassportPage: React.FC = () => {
             <span>Notice & Model Disclaimer</span>
           </div>
           <p className="text-[11px] leading-relaxed">
-            Prototype project document for sustainability planning and demonstration purposes. This document is an illustrative model export generated by the Climate Action Passport platform. It does not constitute an official government certification, financial guarantee, or legal endorsement.
+            Illustrative estimate for prototype demonstration. This document is an illustrative model export generated by the Climate Action Passport platform for planning and finance documentation submission. It does not constitute an official government certification, financial guarantee, or legal endorsement.
           </p>
         </div>
       </Card>

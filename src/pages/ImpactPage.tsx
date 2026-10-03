@@ -86,6 +86,9 @@ export const ImpactPage: React.FC = () => {
   const [selectedCategory, setSelectedCategory] = useState<EvidenceItem['category']>('electricity bill');
   const [mockFileName, setMockFileName] = useState<string>('');
 
+  const [isUploading, setIsUploading] = useState<boolean>(false);
+  const [uploadError, setUploadError] = useState<string | null>(null);
+
   // Sample scenario dataset
   const reductionComparison = [
     { metric: 'Energy Reduction', predicted: 18, actual: 16, variance: -2 },
@@ -131,15 +134,31 @@ export const ImpactPage: React.FC = () => {
     },
   ];
 
-  const handleMockUpload = (e: React.FormEvent) => {
+  const handleMockUpload = async (e: React.FormEvent) => {
     e.preventDefault();
-    if (!mockFileName) return;
+    const trimmedFileName = mockFileName.trim();
+    if (!trimmedFileName) return;
+
+    setIsUploading(true);
+    setUploadError(null);
+
+    // Duplicate check on filename or reference
+    const isDuplicate = evidenceList.some(
+      (item) => item.fileName.toLowerCase() === trimmedFileName.toLowerCase() ||
+                item.name.toLowerCase() === trimmedFileName.toLowerCase()
+    );
+
+    if (isDuplicate) {
+      setUploadError('Evidence already added.');
+      setIsUploading(false);
+      return;
+    }
 
     const newItem: EvidenceItem = {
       id: `ev-${Date.now()}`,
       name: `${selectedCategory.toUpperCase()} Evidence`,
       category: selectedCategory,
-      fileName: mockFileName,
+      fileName: trimmedFileName,
       uploadDate: new Date().toLocaleDateString('en-US', { month: 'short', day: '2-digit', year: 'numeric' }),
       status: 'Uploaded',
       fileSize: '1.5 MB',
@@ -147,6 +166,7 @@ export const ImpactPage: React.FC = () => {
 
     setEvidenceList([newItem, ...evidenceList]);
     setMockFileName('');
+    setIsUploading(false);
     setShowUploadModal(false);
   };
 
@@ -210,7 +230,7 @@ export const ImpactPage: React.FC = () => {
             Operational Performance: Predicted vs Actual Outcomes
           </h3>
           <Badge variant="teal" size="sm">
-            Audited Sample Scenario
+            Illustrative Demo Scenario
           </Badge>
         </div>
 
@@ -343,7 +363,7 @@ export const ImpactPage: React.FC = () => {
               Audit Evidence Checklist & Proof Ledger ({evidenceList.length})
             </h3>
             <p className="text-xs text-slate-500">
-              Upload utility bills, equipment tax invoices, and site photos for bank verification.
+              Upload utility bills, equipment tax invoices, and site photos for finance documentation verification.
             </p>
           </div>
 
@@ -363,7 +383,7 @@ export const ImpactPage: React.FC = () => {
             const getStatusBadge = (status: EvidenceItem['status']) => {
               switch (status) {
                 case 'Verified':
-                  return <StatusBadge status="Verified" />;
+                  return <Badge variant="teal" size="sm">Demo Verified</Badge>;
                 case 'Uploaded':
                   return <Badge variant="blue" size="sm">Uploaded</Badge>;
                 case 'Pending':
@@ -411,11 +431,21 @@ export const ImpactPage: React.FC = () => {
       {showUploadModal && (
         <Modal
           isOpen={showUploadModal}
-          onClose={() => setShowUploadModal(false)}
+          onClose={() => {
+            setShowUploadModal(false);
+            setUploadError(null);
+          }}
           title="Upload Audit Evidence File"
           subtitle="Add utility bills, equipment invoices, or site photographs"
         >
           <form onSubmit={handleMockUpload} className="space-y-4 text-xs">
+            {uploadError && (
+              <div className="p-3 bg-rose-50 border border-rose-200 rounded-xl text-rose-800 text-xs font-semibold flex items-center gap-2">
+                <AlertTriangle className="w-4 h-4 text-rose-600 flex-shrink-0" />
+                <span>{uploadError}</span>
+              </div>
+            )}
+
             <div className="space-y-1">
               <label className="font-bold text-slate-800 block">Select Document Category:</label>
               <select
@@ -436,7 +466,10 @@ export const ImpactPage: React.FC = () => {
                 type="text"
                 placeholder="e.g. electric_bill_oct2026.pdf"
                 value={mockFileName}
-                onChange={(e) => setMockFileName(e.target.value)}
+                onChange={(e) => {
+                  setMockFileName(e.target.value);
+                  setUploadError(null);
+                }}
                 required
                 className="w-full p-2.5 bg-white border border-slate-300 rounded-xl text-slate-900 focus:ring-2 focus:ring-emerald-500 focus:outline-none"
               />
@@ -449,10 +482,25 @@ export const ImpactPage: React.FC = () => {
             </div>
 
             <div className="flex justify-end gap-2 pt-2 border-t border-slate-200">
-              <Button variant="outline" size="sm" type="button" onClick={() => setShowUploadModal(false)}>
+              <Button
+                variant="outline"
+                size="sm"
+                type="button"
+                onClick={() => {
+                  setShowUploadModal(false);
+                  setUploadError(null);
+                }}
+              >
                 Cancel
               </Button>
-              <Button variant="primary" size="sm" type="submit" leftIcon={<UploadCloud className="w-4 h-4" />}>
+              <Button
+                variant="primary"
+                size="sm"
+                type="submit"
+                disabled={isUploading || !mockFileName.trim()}
+                isLoading={isUploading}
+                leftIcon={<UploadCloud className="w-4 h-4" />}
+              >
                 Confirm Upload
               </Button>
             </div>
