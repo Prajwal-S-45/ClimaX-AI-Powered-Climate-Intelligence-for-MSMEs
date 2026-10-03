@@ -1,13 +1,99 @@
-import React from 'react';
-import { FileCheck2, Download, Share2, ShieldCheck, QrCode, Building2, MapPin, Award, CheckCircle2 } from 'lucide-react';
+import React, { useState, useEffect } from 'react';
+import {
+  FileCheck2,
+  Download,
+  Share2,
+  ShieldCheck,
+  QrCode,
+  Building2,
+  MapPin,
+  Award,
+  CheckCircle2,
+  Clock,
+  DollarSign,
+  Droplets,
+  Flame,
+  AlertCircle,
+  Sparkles,
+  ExternalLink,
+  Printer,
+  Copy,
+  Check
+} from 'lucide-react';
 import { Card, Badge, Button, StatusBadge, RiskBadge } from '../components/ui';
-import { mockMSMEProfile } from '../data/mockData';
+import { OnboardingFormData } from '../types';
+import { formatCurrencyINR } from '../utils/helpers';
+
+const defaultProfile: OnboardingFormData = {
+  businessName: 'Shakti Precision Components',
+  businessType: 'Private Limited',
+  industry: 'Manufacturing',
+  location: 'Bengaluru, Karnataka',
+  yearsOperating: 8,
+  numberOfEmployees: 28,
+  monthlyElectricityBillINR: 78000,
+  monthlyWaterConsumptionLitres: 85000,
+  monthlyFuelExpenseINR: 22000,
+  operatingHoursPerDay: 10,
+  workingDaysPerMonth: 26,
+  climateConcerns: ['Extreme heat', 'Rising energy costs', 'Water scarcity'],
+  availableBudgetINR: 300000,
+  preferredHorizonYears: 5,
+  maxPaybackPeriodYears: 4,
+};
 
 export const PassportPage: React.FC = () => {
+  const [profile, setProfile] = useState<OnboardingFormData>(defaultProfile);
+  const [copied, setCopied] = useState<boolean>(false);
+
+  useEffect(() => {
+    try {
+      const saved = localStorage.getItem('msme_climate_profile');
+      if (saved) {
+        setProfile({ ...defaultProfile, ...JSON.parse(saved) });
+      }
+    } catch (e) {
+      console.error('Error loading profile in passport:', e);
+    }
+  }, []);
+
+  const handlePrint = () => {
+    window.print();
+  };
+
+  const handleShare = () => {
+    const passportUrl = 'https://climax-passport.app/verify/CAP-2026-0001';
+    navigator.clipboard.writeText(passportUrl).then(() => {
+      setCopied(true);
+      setTimeout(() => setCopied(false), 3000);
+    });
+  };
+
   return (
-    <div className="space-y-6 max-w-4xl mx-auto">
-      {/* Header Actions */}
-      <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-4 border-b border-slate-200 pb-4">
+    <div className="space-y-6 max-w-4xl mx-auto pb-12">
+      {/* Printable CSS overrides */}
+      <style>{`
+        @media print {
+          body {
+            background-color: white !important;
+            color: black !important;
+          }
+          nav, sidebar, header, .no-print {
+            display: none !important;
+          }
+          .print-full-width {
+            width: 100% !important;
+            max-width: 100% !important;
+            margin: 0 !important;
+            padding: 0 !important;
+            box-shadow: none !important;
+            border: 1px solid #cbd5e1 !important;
+          }
+        }
+      `}</style>
+
+      {/* Top Bar Header & Action Buttons */}
+      <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-4 border-b border-slate-200 pb-4 no-print">
         <div className="flex items-center gap-3">
           <div className="w-10 h-10 rounded-xl bg-purple-50 border border-purple-200 text-purple-700 flex items-center justify-center font-bold">
             <FileCheck2 className="w-5 h-5" />
@@ -15,91 +101,337 @@ export const PassportPage: React.FC = () => {
           <div>
             <h1 className="text-2xl font-bold text-slate-900">Climate Action Passport</h1>
             <p className="text-xs text-slate-500">
-              Verifiable green credit profile for banks, SIDBI low-interest loans, and OEM buyers.
+              Formal digital project certificate for sustainability planning, banks, and supply chain audits.
             </p>
           </div>
         </div>
 
-        <div className="flex gap-2">
-          <Button variant="outline" size="sm" leftIcon={<Share2 className="w-3.5 h-3.5" />}>
-            Share QR Link
+        <div className="flex items-center gap-2">
+          <Button
+            variant="outline"
+            size="sm"
+            onClick={handleShare}
+            leftIcon={copied ? <Check className="w-3.5 h-3.5 text-emerald-600" /> : <Share2 className="w-3.5 h-3.5" />}
+          >
+            {copied ? 'Link Copied!' : 'Share Passport'}
           </Button>
-          <Button variant="primary" size="sm" leftIcon={<Download className="w-3.5 h-3.5" />}>
-            Export Audit PDF
+
+          <Button
+            variant="primary"
+            size="sm"
+            onClick={handlePrint}
+            leftIcon={<Printer className="w-3.5 h-3.5" />}
+          >
+            Download Passport (PDF)
           </Button>
         </div>
       </div>
 
-      {/* Main Passport Document Container */}
-      <Card className="p-8 space-y-6 border-2 border-emerald-500/40 shadow-lg relative overflow-hidden bg-gradient-to-b from-white via-slate-50/50 to-white">
-        {/* Top Watermark / Badge */}
-        <div className="flex justify-between items-start border-b border-slate-200 pb-6">
-          <div className="space-y-2">
-            <div className="flex items-center gap-2">
-              <Badge variant="emerald" size="md" icon={<ShieldCheck className="w-3.5 h-3.5 text-emerald-600" />}>
-                Verified Climate Action Passport
+      {/* Toast feedback when sharing link */}
+      {copied && (
+        <div className="no-print p-3 bg-emerald-50 border border-emerald-200 rounded-xl text-emerald-800 text-xs flex items-center justify-between animate-fadeIn">
+          <span className="flex items-center gap-2 font-semibold">
+            <CheckCircle2 className="w-4 h-4 text-emerald-600" />
+            Passport Reference Link Copied: https://climax-passport.app/verify/CAP-2026-0001
+          </span>
+          <span className="text-[10px] text-emerald-600">Copied to Clipboard</span>
+        </div>
+      )}
+
+      {/* Main Passport Certificate Frame */}
+      <Card className="print-full-width p-8 space-y-8 border-2 border-emerald-600/30 shadow-xl relative overflow-hidden bg-gradient-to-b from-white via-slate-50/30 to-white rounded-3xl">
+        {/* Decorative Top Passport Security Trim */}
+        <div className="h-2 bg-gradient-to-r from-emerald-600 via-teal-500 to-emerald-700 rounded-t-xl -mt-8 -mx-8 mb-6" />
+
+        {/* SECTION 1: PASSPORT HEADER & OFFICIAL STAMP */}
+        <div className="flex flex-col sm:flex-row justify-between items-start border-b border-slate-200 pb-6 gap-6">
+          <div className="space-y-3">
+            <div className="flex items-center gap-2 flex-wrap">
+              <Badge variant="emerald" size="md" icon={<ShieldCheck className="w-4 h-4 text-emerald-600" />}>
+                CLIMATE ACTION PASSPORT
               </Badge>
-              <StatusBadge status="Verified" />
+              <Badge variant="purple" size="sm">
+                Status: Ready for Review
+              </Badge>
             </div>
-            <h2 className="text-2xl font-extrabold text-slate-900 tracking-tight">{mockMSMEProfile.businessName}</h2>
-            <div className="flex items-center gap-3 text-xs text-slate-600">
-              <span className="flex items-center gap-1">
+
+            <div>
+              <h2 className="text-2xl font-extrabold text-slate-900 tracking-tight">
+                {profile.businessName || 'Shakti Precision Components'}
+              </h2>
+              <p className="text-xs text-slate-500 font-medium mt-0.5">
+                Official Decarbonization & Climate Resilience Action Record
+              </p>
+            </div>
+
+            <div className="flex items-center gap-4 text-xs font-semibold text-slate-600">
+              <span className="flex items-center gap-1.5">
                 <Building2 className="w-3.5 h-3.5 text-slate-400" />
-                {mockMSMEProfile.sector}
+                {profile.industry}
               </span>
               <span>•</span>
-              <span className="flex items-center gap-1">
+              <span className="flex items-center gap-1.5">
                 <MapPin className="w-3.5 h-3.5 text-slate-400" />
-                {mockMSMEProfile.city}, {mockMSMEProfile.state}
+                {profile.location}
               </span>
             </div>
           </div>
 
-          <div className="p-3 bg-white border border-slate-200 rounded-2xl shadow-xs flex flex-col items-center justify-center space-y-1">
-            <QrCode className="w-12 h-12 text-slate-800" />
-            <span className="text-[10px] font-mono text-slate-500">CAP-2026-8891</span>
+          {/* QR Code & Passport Identifier Metadata Block */}
+          <div className="p-4 bg-white border border-slate-200 rounded-2xl shadow-xs flex flex-col items-center justify-center space-y-2 border-dashed">
+            <QrCode className="w-16 h-16 text-slate-900" />
+            <div className="text-center">
+              <span className="text-[10px] font-semibold text-slate-400 uppercase tracking-widest block">Passport ID</span>
+              <span className="text-xs font-mono font-extrabold text-emerald-700">CAP-2026-0001</span>
+            </div>
           </div>
         </div>
 
-        {/* Passport Audit Grid */}
-        <div className="grid grid-cols-2 md:grid-cols-4 gap-4">
-          <div className="p-4 bg-white border border-slate-200 rounded-xl space-y-1">
-            <span className="text-[11px] font-semibold text-slate-400 uppercase tracking-wider block">Passport Reg ID</span>
-            <span className="text-xs font-mono font-bold text-slate-900">CAP-IN-2026-8891</span>
-          </div>
-          <div className="p-4 bg-white border border-slate-200 rounded-xl space-y-1">
-            <span className="text-[11px] font-semibold text-slate-400 uppercase tracking-wider block">Climate Risk Rating</span>
-            <RiskBadge severity="Low" />
-          </div>
-          <div className="p-4 bg-white border border-slate-200 rounded-xl space-y-1">
-            <span className="text-[11px] font-semibold text-slate-400 uppercase tracking-wider block">CO₂ Abatement Target</span>
-            <span className="text-sm font-extrabold text-emerald-700">80 Tons / Year</span>
-          </div>
-          <div className="p-4 bg-white border border-slate-200 rounded-xl space-y-1">
-            <span className="text-[11px] font-semibold text-slate-400 uppercase tracking-wider block">Banking Eligibility</span>
-            <span className="text-xs font-bold text-teal-700">Priority Green Loan Ready</span>
+        {/* SECTION 2: BUSINESS PROFILE */}
+        <div className="space-y-3">
+          <h3 className="text-xs font-extrabold text-slate-900 uppercase tracking-wider border-b border-slate-100 pb-1 flex items-center gap-2">
+            <Building2 className="w-4 h-4 text-emerald-600" />
+            1. Business Profile Overview
+          </h3>
+
+          <div className="grid grid-cols-2 sm:grid-cols-4 gap-4 text-xs">
+            <div className="p-3 bg-slate-50 rounded-xl border border-slate-200/80">
+              <span className="text-slate-400 block text-[11px]">Business Name</span>
+              <span className="font-bold text-slate-900">{profile.businessName}</span>
+            </div>
+            <div className="p-3 bg-slate-50 rounded-xl border border-slate-200/80">
+              <span className="text-slate-400 block text-[11px]">Industry Sector</span>
+              <span className="font-bold text-slate-900">{profile.industry}</span>
+            </div>
+            <div className="p-3 bg-slate-50 rounded-xl border border-slate-200/80">
+              <span className="text-slate-400 block text-[11px]">Location / Site</span>
+              <span className="font-bold text-slate-900">{profile.location}</span>
+            </div>
+            <div className="p-3 bg-slate-50 rounded-xl border border-slate-200/80">
+              <span className="text-slate-400 block text-[11px]">Workforce Size</span>
+              <span className="font-bold text-slate-900">{profile.numberOfEmployees} Employees</span>
+            </div>
           </div>
         </div>
 
-        {/* Approved Interventions Summary */}
-        <div className="space-y-3 pt-2">
-          <h3 className="text-sm font-bold text-slate-900 uppercase tracking-wider">Verified Intervention Commitments</h3>
-          <div className="space-y-2">
-            <div className="p-3 bg-white border border-slate-200 rounded-xl flex justify-between items-center text-xs">
-              <div className="flex items-center gap-2">
-                <CheckCircle2 className="w-4 h-4 text-emerald-600" />
-                <span className="font-semibold text-slate-800">50 kWp Rooftop Solar PV Installation</span>
-              </div>
-              <span className="font-bold text-slate-900">₹22,00,000 Capex</span>
+        {/* SECTION 3: CLIMATE BASELINE */}
+        <div className="space-y-3">
+          <h3 className="text-xs font-extrabold text-slate-900 uppercase tracking-wider border-b border-slate-100 pb-1 flex items-center gap-2">
+            <Flame className="w-4 h-4 text-amber-600" />
+            2. Climate Risk Baseline Rating
+          </h3>
+
+          <div className="grid grid-cols-2 sm:grid-cols-4 gap-4 text-xs">
+            <div className="p-3 bg-white border border-slate-200 rounded-xl space-y-1">
+              <span className="text-slate-400 block text-[11px]">Extreme Heat Risk</span>
+              <RiskBadge severity="High" />
             </div>
-            <div className="p-3 bg-white border border-slate-200 rounded-xl flex justify-between items-center text-xs">
-              <div className="flex items-center gap-2">
-                <CheckCircle2 className="w-4 h-4 text-emerald-600" />
-                <span className="font-semibold text-slate-800">IE4 Super-Premium Efficiency Motors Upgrade</span>
-              </div>
-              <span className="font-bold text-slate-900">₹4,50,000 Capex</span>
+            <div className="p-3 bg-white border border-slate-200 rounded-xl space-y-1">
+              <span className="text-slate-400 block text-[11px]">Flood Exposure Risk</span>
+              <RiskBadge severity="Medium" />
+            </div>
+            <div className="p-3 bg-white border border-slate-200 rounded-xl space-y-1">
+              <span className="text-slate-400 block text-[11px]">Water Stress Risk</span>
+              <RiskBadge severity="High" />
+            </div>
+            <div className="p-3 bg-white border border-slate-200 rounded-xl space-y-1">
+              <span className="text-slate-400 block text-[11px]">Energy Vulnerability</span>
+              <RiskBadge severity="High" />
             </div>
           </div>
+        </div>
+
+        {/* SECTION 4: SELECTED PROJECT */}
+        <div className="space-y-3">
+          <h3 className="text-xs font-extrabold text-slate-900 uppercase tracking-wider border-b border-slate-100 pb-1 flex items-center gap-2">
+            <CheckCircle2 className="w-4 h-4 text-emerald-600" />
+            3. Selected Climate Intervention Project
+          </h3>
+
+          <div className="p-4 bg-slate-900 text-white rounded-2xl space-y-3">
+            <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-2 border-b border-slate-800 pb-2">
+              <div>
+                <span className="text-[11px] font-bold text-emerald-400 uppercase tracking-wider">Project Name</span>
+                <h4 className="text-base font-extrabold text-white">
+                  Balanced MSME Climate Decarbonization & Resilience Plan
+                </h4>
+              </div>
+              <div className="text-right">
+                <span className="text-[11px] text-slate-400 block">Total Investment Required</span>
+                <span className="text-lg font-extrabold text-emerald-400">
+                  {formatCurrencyINR(280000)}
+                </span>
+              </div>
+            </div>
+
+            <div className="space-y-2">
+              <span className="text-[11px] font-semibold text-slate-300 block">Bundled Interventions:</span>
+              <div className="grid grid-cols-1 sm:grid-cols-3 gap-2 text-xs">
+                <div className="p-2.5 bg-slate-800 rounded-xl border border-slate-700">
+                  <span className="font-semibold text-white block">1. LED Lighting Retrofit</span>
+                  <span className="text-[11px] text-slate-400">Capex: ₹65,000</span>
+                </div>
+                <div className="p-2.5 bg-slate-800 rounded-xl border border-slate-700">
+                  <span className="font-semibold text-white block">2. Cool Roof Thermal Coating</span>
+                  <span className="text-[11px] text-slate-400">Capex: ₹95,000</span>
+                </div>
+                <div className="p-2.5 bg-slate-800 rounded-xl border border-slate-700">
+                  <span className="font-semibold text-white block">3. IE4 Super-Premium Motors</span>
+                  <span className="text-[11px] text-slate-400">Capex: ₹1,20,000</span>
+                </div>
+              </div>
+            </div>
+
+            <div className="flex justify-between items-center text-xs pt-1 text-slate-400">
+              <span>Implementation Timeline Target: <strong className="text-white">6 Weeks</strong></span>
+              <span>Projected Payback: <strong className="text-emerald-400">1.6 Years</strong></span>
+            </div>
+          </div>
+        </div>
+
+        {/* SECTION 5: FINANCIAL OUTLOOK & CLIMATE IMPACT GRID */}
+        <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
+          {/* Financial Outlook */}
+          <div className="space-y-3">
+            <h3 className="text-xs font-extrabold text-slate-900 uppercase tracking-wider border-b border-slate-100 pb-1 flex items-center gap-2">
+              <DollarSign className="w-4 h-4 text-emerald-600" />
+              4. Financial Outlook
+            </h3>
+
+            <div className="p-4 bg-emerald-50/50 border border-emerald-200 rounded-2xl space-y-2.5 text-xs">
+              <div className="flex justify-between items-center">
+                <span className="text-slate-600">Expected Annual Operating Savings:</span>
+                <span className="font-extrabold text-emerald-700 text-sm">{formatCurrencyINR(174000)} / yr</span>
+              </div>
+              <div className="flex justify-between items-center">
+                <span className="text-slate-600">Estimated Payback Period:</span>
+                <span className="font-bold text-slate-900">1.6 Years</span>
+              </div>
+              <div className="flex justify-between items-center border-t border-emerald-200/80 pt-2">
+                <span className="text-slate-700 font-semibold">5-Year Cumulative Savings:</span>
+                <span className="font-extrabold text-slate-900 text-base">{formatCurrencyINR(870000)}</span>
+              </div>
+            </div>
+          </div>
+
+          {/* Climate Impact */}
+          <div className="space-y-3">
+            <h3 className="text-xs font-extrabold text-slate-900 uppercase tracking-wider border-b border-slate-100 pb-1 flex items-center gap-2">
+              <ShieldCheck className="w-4 h-4 text-teal-600" />
+              5. Climate & Environmental Impact
+            </h3>
+
+            <div className="p-4 bg-teal-50/50 border border-teal-200 rounded-2xl space-y-2.5 text-xs">
+              <div className="flex justify-between items-center">
+                <span className="text-slate-600">Estimated CO₂ Reduction:</span>
+                <span className="font-extrabold text-teal-700 text-sm">28.5 tCO₂e / year</span>
+              </div>
+              <div className="flex justify-between items-center">
+                <span className="text-slate-600">Estimated Water Savings:</span>
+                <span className="font-bold text-slate-900">120,000 Litres / year</span>
+              </div>
+              <div className="flex justify-between items-center border-t border-teal-200/80 pt-2">
+                <span className="text-slate-700 font-semibold">Risks Addressed:</span>
+                <div className="flex gap-1 flex-wrap">
+                  <Badge variant="teal" size="sm">Energy</Badge>
+                  <Badge variant="emerald" size="sm">Heat</Badge>
+                  <Badge variant="blue" size="sm">Water</Badge>
+                </div>
+              </div>
+            </div>
+          </div>
+        </div>
+
+        {/* SECTION 6: IMPLEMENTATION PLAN */}
+        <div className="space-y-3">
+          <h3 className="text-xs font-extrabold text-slate-900 uppercase tracking-wider border-b border-slate-100 pb-1 flex items-center gap-2">
+            <Clock className="w-4 h-4 text-purple-600" />
+            6. Project Implementation Timeline (4 Phases)
+          </h3>
+
+          <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-3 text-xs">
+            <div className="p-3 bg-white border border-slate-200 rounded-xl space-y-1">
+              <span className="text-[10px] font-bold text-purple-600 uppercase tracking-wider">Phase 1 — Assessment</span>
+              <h5 className="font-bold text-slate-900">Site Baseline & Audit</h5>
+              <p className="text-[11px] text-slate-500">Week 1 – Week 2</p>
+            </div>
+            <div className="p-3 bg-white border border-slate-200 rounded-xl space-y-1">
+              <span className="text-[10px] font-bold text-purple-600 uppercase tracking-wider">Phase 2 — Procurement</span>
+              <h5 className="font-bold text-slate-900">Vendor & SIDBI Subsidy</h5>
+              <p className="text-[11px] text-slate-500">Week 3 – Week 4</p>
+            </div>
+            <div className="p-3 bg-white border border-slate-200 rounded-xl space-y-1">
+              <span className="text-[10px] font-bold text-purple-600 uppercase tracking-wider">Phase 3 — Installation</span>
+              <h5 className="font-bold text-slate-900">Retrofit & Commissioning</h5>
+              <p className="text-[11px] text-slate-500">Week 5 – Week 6</p>
+            </div>
+            <div className="p-3 bg-white border border-slate-200 rounded-xl space-y-1">
+              <span className="text-[10px] font-bold text-purple-600 uppercase tracking-wider">Phase 4 — Verification</span>
+              <h5 className="font-bold text-slate-900">Impact Metering Audit</h5>
+              <p className="text-[11px] text-slate-500">Week 7+</p>
+            </div>
+          </div>
+        </div>
+
+        {/* SECTION 7: EVIDENCE CHECKLIST */}
+        <div className="space-y-3">
+          <h3 className="text-xs font-extrabold text-slate-900 uppercase tracking-wider border-b border-slate-100 pb-1 flex items-center gap-2">
+            <FileCheck2 className="w-4 h-4 text-emerald-600" />
+            7. Bank Verification Evidence Checklist
+          </h3>
+
+          <div className="space-y-2 text-xs">
+            <div className="p-3 bg-emerald-50/60 border border-emerald-200 rounded-xl flex items-center justify-between">
+              <div className="flex items-center gap-2.5">
+                <CheckCircle2 className="w-4 h-4 text-emerald-600 flex-shrink-0" />
+                <span className="font-semibold text-slate-800">Business registration documents (GST, Udyam MSME Certificate)</span>
+              </div>
+              <Badge variant="emerald" size="sm">Verified</Badge>
+            </div>
+
+            <div className="p-3 bg-emerald-50/60 border border-emerald-200 rounded-xl flex items-center justify-between">
+              <div className="flex items-center gap-2.5">
+                <CheckCircle2 className="w-4 h-4 text-emerald-600 flex-shrink-0" />
+                <span className="font-semibold text-slate-800">Project quotation & vendor technology specifications</span>
+              </div>
+              <Badge variant="emerald" size="sm">Verified</Badge>
+            </div>
+
+            <div className="p-3 bg-slate-50 border border-slate-200 rounded-xl flex items-center justify-between text-slate-500">
+              <div className="flex items-center gap-2.5">
+                <div className="w-4 h-4 rounded-full border-2 border-slate-300 flex-shrink-0" />
+                <span>Supplier Tax Invoice</span>
+              </div>
+              <Badge variant="slate" size="sm">Pending Upload</Badge>
+            </div>
+
+            <div className="p-3 bg-slate-50 border border-slate-200 rounded-xl flex items-center justify-between text-slate-500">
+              <div className="flex items-center gap-2.5">
+                <div className="w-4 h-4 rounded-full border-2 border-slate-300 flex-shrink-0" />
+                <span>On-site installation photographic evidence</span>
+              </div>
+              <Badge variant="slate" size="sm">Pending Upload</Badge>
+            </div>
+
+            <div className="p-3 bg-slate-50 border border-slate-200 rounded-xl flex items-center justify-between text-slate-500">
+              <div className="flex items-center gap-2.5">
+                <div className="w-4 h-4 rounded-full border-2 border-slate-300 flex-shrink-0" />
+                <span>Post-installation utility baseline bills & smart meter logs</span>
+              </div>
+              <Badge variant="slate" size="sm">Pending Upload</Badge>
+            </div>
+          </div>
+        </div>
+
+        {/* SECTION 8: DISCLAIMER NOTICE */}
+        <div className="p-4 bg-slate-100 border border-slate-200 rounded-2xl space-y-1 text-slate-500 text-xs">
+          <div className="flex items-center gap-1.5 font-bold text-slate-700">
+            <AlertCircle className="w-4 h-4 text-slate-500" />
+            <span>Notice & Model Disclaimer</span>
+          </div>
+          <p className="text-[11px] leading-relaxed">
+            Prototype project document for sustainability planning and demonstration purposes. This document is an illustrative model export generated by the Climate Action Passport platform. It does not constitute an official government certification, financial guarantee, or legal endorsement.
+          </p>
         </div>
       </Card>
     </div>
