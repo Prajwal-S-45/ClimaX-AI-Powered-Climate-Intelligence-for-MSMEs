@@ -3,7 +3,7 @@ import { clsx } from 'clsx';
 import { twMerge } from 'tailwind-merge';
 
 export interface BadgeProps extends React.HTMLAttributes<HTMLSpanElement> {
-  variant?: 'emerald' | 'teal' | 'navy' | 'slate' | 'amber' | 'rose' | 'purple' | 'gold';
+  variant?: 'emerald' | 'teal' | 'navy' | 'slate' | 'amber' | 'rose' | 'purple' | 'gold' | 'blue';
   size?: 'sm' | 'md';
   icon?: React.ReactNode;
 }
@@ -27,6 +27,7 @@ export const Badge: React.FC<BadgeProps> = ({
     rose: 'bg-rose-50 text-rose-700 border-rose-200',
     purple: 'bg-purple-50 text-purple-700 border-purple-200',
     gold: 'bg-amber-100/60 text-amber-900 border-amber-300',
+    blue: 'bg-blue-50 text-blue-700 border-blue-200',
   };
 
   const sizes = {
