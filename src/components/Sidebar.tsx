@@ -11,6 +11,7 @@ import {
   ChevronRight,
   Globe,
   ClipboardList,
+  Play
 } from 'lucide-react';
 
 interface SidebarProps {
@@ -69,8 +70,11 @@ export const Sidebar: React.FC<SidebarProps> = ({ isOpen, setIsOpen }) => {
         {/* Main Navigation */}
         <nav className="flex-1 overflow-y-auto px-4 py-5 space-y-6">
           <div className="space-y-1">
-            <div className="px-3 pb-2 text-[11px] font-bold text-slate-400 uppercase tracking-wider">
-              Core Platform
+            <div className="px-3 pb-2 text-[11px] font-bold text-slate-400 uppercase tracking-wider flex items-center justify-between">
+              <span>Core Platform</span>
+              <span className="text-[10px] font-bold text-purple-600 bg-purple-50 px-2 py-0.5 rounded-full border border-purple-200 flex items-center gap-1">
+                <Play className="w-2.5 h-2.5 fill-current" /> Demo Flow
+              </span>
             </div>
             {mainNavItems.map((item) => {
               const Icon = item.icon;
@@ -137,8 +141,8 @@ export const Sidebar: React.FC<SidebarProps> = ({ isOpen, setIsOpen }) => {
           <div className="rounded-xl p-3 bg-white border border-slate-200 shadow-xs flex items-center gap-3">
             <div className="w-2.5 h-2.5 rounded-full bg-emerald-500 animate-pulse" />
             <div>
-              <p className="text-xs font-bold text-slate-900">Financial Audit Ready</p>
-              <p className="text-[11px] text-slate-500">Bank & OEM CBAM Compliant</p>
+              <p className="text-xs font-bold text-slate-900">Finance Documentation Readiness</p>
+              <p className="text-[11px] text-slate-500">Structured Project Documentation</p>
             </div>
           </div>
         </div>

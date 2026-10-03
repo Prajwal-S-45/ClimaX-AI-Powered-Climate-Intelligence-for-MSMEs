@@ -1,280 +1,41 @@
-import React, { useState, useEffect } from 'react';
+import React, { useState } from 'react';
 import { useNavigate, Link } from 'react-router-dom';
 import {
   Sliders,
   Sparkles,
   CheckCircle2,
-  Plus,
   ArrowRight,
   DollarSign,
-  Zap,
   Info,
   Award,
   ShieldCheck,
   TrendingUp,
-  Droplets,
-  Flame,
   Layers,
-  ChevronRight,
-  FileCheck2,
   RotateCcw
 } from 'lucide-react';
 import {
   Card,
-  CardHeader,
-  CardTitle,
-  CardDescription,
-  CardContent,
-  CardFooter,
   Badge,
   Button,
-  ProgressBar,
-  Modal,
-  Slider
+  Modal
 } from '../components/ui';
-import { OnboardingFormData } from '../types';
+import { useClimate } from '../context/ClimateContext';
+import { interventionDatabase, InterventionItem } from '../utils/climateEngine';
 import { formatCurrencyINR } from '../utils/helpers';
-
-interface InterventionItem {
-  id: string;
-  name: string;
-  category: 'Energy' | 'Water' | 'Heat' | 'Transport' | 'Waste';
-  estimatedInvestment: number;
-  annualSavings: number;
-  co2Reduction: number; // tCO2e/yr
-  waterSavings: number; // Litres/yr
-  riskCategories: string[];
-  paybackYears: number;
-  complexity: 'Low' | 'Medium' | 'High';
-  description: string;
-}
-
-const interventionDatabase: InterventionItem[] = [
-  {
-    id: 'led-retrofit',
-    name: 'LED Lighting Retrofit & Smart Controls',
-    category: 'Energy',
-    estimatedInvestment: 65000,
-    annualSavings: 38000,
-    co2Reduction: 6.5,
-    waterSavings: 0,
-    riskCategories: ['Energy Vulnerability'],
-    paybackYears: 1.7,
-    complexity: 'Low',
-    description: 'High-bay LED fixture replacement with motion sensors and daylight harvesting dimmers.',
-  },
-  {
-    id: 'cool-roof',
-    name: 'Cool Roof Thermal Reflective Coating',
-    category: 'Heat',
-    estimatedInvestment: 95000,
-    annualSavings: 54000,
-    co2Reduction: 8.0,
-    waterSavings: 0,
-    riskCategories: ['Extreme Heat', 'Energy Vulnerability'],
-    paybackYears: 1.8,
-    complexity: 'Low',
-    description: 'High-SRI elastomeric reflective roof coating reducing workshop ambient temperature by 4–6°C.',
-  },
-  {
-    id: 'ie4-motors',
-    name: 'IE4 Super-Premium Efficiency Motors',
-    category: 'Energy',
-    estimatedInvestment: 120000,
-    annualSavings: 82000,
-    co2Reduction: 14.0,
-    waterSavings: 0,
-    riskCategories: ['Energy Vulnerability'],
-    paybackYears: 1.5,
-    complexity: 'Medium',
-    description: 'Direct drive IE4 efficiency motor replacements for workshop air compressors and CNC pumps.',
-  },
-  {
-    id: 'water-fixtures',
-    name: 'Water-Efficient Fixtures & Aerators',
-    category: 'Water',
-    estimatedInvestment: 35000,
-    annualSavings: 24000,
-    co2Reduction: 1.2,
-    waterSavings: 120000,
-    riskCategories: ['Water Stress'],
-    paybackYears: 1.5,
-    complexity: 'Low',
-    description: 'Sensor faucets, low-flow aerators, and pressure-regulating valves across facility restrooms.',
-  },
-  {
-    id: 'rainwater-harvesting',
-    name: 'Rainwater Harvesting & Storage System',
-    category: 'Water',
-    estimatedInvestment: 140000,
-    annualSavings: 72000,
-    co2Reduction: 3.5,
-    waterSavings: 280000,
-    riskCategories: ['Water Stress', 'Flood Exposure'],
-    paybackYears: 1.9,
-    complexity: 'Medium',
-    description: 'Rooftop rainwater collection channels, multi-stage filtration unit, and 50,000L storage tank.',
-  },
-  {
-    id: 'waste-heat-recovery',
-    name: 'Waste Heat & Metal Scrap Recovery',
-    category: 'Waste',
-    estimatedInvestment: 80000,
-    annualSavings: 45000,
-    co2Reduction: 5.2,
-    waterSavings: 0,
-    riskCategories: ['Extreme Heat', 'Energy Vulnerability'],
-    paybackYears: 1.8,
-    complexity: 'Medium',
-    description: 'Compressor exhaust heat exchanger for pre-heating process water and oil recycling.',
-  },
-  {
-    id: 'solar-rooftop-starter',
-    name: 'Solar Rooftop System (15 kWp Grid-Tied)',
-    category: 'Energy',
-    estimatedInvestment: 260000,
-    annualSavings: 145000,
-    co2Reduction: 18.5,
-    waterSavings: 0,
-    riskCategories: ['Energy Vulnerability'],
-    paybackYears: 1.8,
-    complexity: 'High',
-    description: '15 kWp grid-tied solar PV array with net-metering to offset DISCOM peak electricity charges.',
-  },
-  {
-    id: 'ev-delivery-trike',
-    name: 'EV Commercial Delivery Trike',
-    category: 'Transport',
-    estimatedInvestment: 180000,
-    annualSavings: 68000,
-    co2Reduction: 7.8,
-    waterSavings: 0,
-    riskCategories: ['Energy Vulnerability'],
-    paybackYears: 2.6,
-    complexity: 'Medium',
-    description: 'Electric 3-wheeler cargo vehicle for local supplier parts dispatch, eliminating diesel fuel costs.',
-  },
-];
-
-const defaultProfile: OnboardingFormData = {
-  businessName: 'Shakti Precision Components',
-  businessType: 'Private Limited',
-  industry: 'Manufacturing',
-  location: 'Bengaluru, Karnataka',
-  yearsOperating: 8,
-  numberOfEmployees: 28,
-  monthlyElectricityBillINR: 78000,
-  monthlyWaterConsumptionLitres: 85000,
-  monthlyFuelExpenseINR: 22000,
-  operatingHoursPerDay: 10,
-  workingDaysPerMonth: 26,
-  climateConcerns: ['Extreme heat', 'Rising energy costs', 'Water scarcity'],
-  availableBudgetINR: 300000,
-  preferredHorizonYears: 5,
-  maxPaybackPeriodYears: 4,
-};
 
 export const InterventionsPage: React.FC = () => {
   const navigate = useNavigate();
-  const [profile, setProfile] = useState<OnboardingFormData>(defaultProfile);
-  const [budget, setBudget] = useState<number>(300000);
-  const [selectedBundleId, setSelectedBundleId] = useState<string>('bundle-b');
+  const {
+    profile,
+    budget,
+    setBudget,
+    selectedBundleId,
+    setSelectedBundleId,
+    bundles,
+    activeBundle,
+  } = useClimate();
+
   const [activeModalItem, setActiveModalItem] = useState<InterventionItem | null>(null);
-
-  useEffect(() => {
-    try {
-      const saved = localStorage.getItem('msme_climate_profile');
-      if (saved) {
-        const parsed = JSON.parse(saved);
-        setProfile({ ...defaultProfile, ...parsed });
-        if (parsed.availableBudgetINR) {
-          setBudget(Number(parsed.availableBudgetINR));
-        }
-      }
-    } catch (e) {
-      console.error('Error loading saved profile:', e);
-    }
-  }, []);
-
-  // Deterministic algorithm generating 3 feasible intervention bundles for the budget
-  const generateBundles = (currentBudget: number) => {
-    // Bundle A: Quick-Payback Starter (Target ~50% of budget)
-    const starterItems = [
-      interventionDatabase.find((i) => i.id === 'led-retrofit')!,
-      interventionDatabase.find((i) => i.id === 'water-fixtures')!,
-      interventionDatabase.find((i) => i.id === 'cool-roof')!,
-    ].filter((item) => item.estimatedInvestment <= currentBudget * 0.7);
-
-    // Bundle B: Balanced Climate Plan (Target ~75-85% of budget)
-    const balancedItems = [
-      interventionDatabase.find((i) => i.id === 'led-retrofit')!,
-      interventionDatabase.find((i) => i.id === 'cool-roof')!,
-      interventionDatabase.find((i) => i.id === 'ie4-motors')!,
-      interventionDatabase.find((i) => i.id === 'water-fixtures')!,
-    ].filter((_, idx, arr) => {
-      const sum = arr.slice(0, idx + 1).reduce((acc, x) => acc + x.estimatedInvestment, 0);
-      return sum <= currentBudget;
-    });
-
-    // Bundle C: High-Impact Resilience Plan (Target ~90-100% of budget)
-    let heavyItems: InterventionItem[] = [];
-    if (currentBudget >= 350000) {
-      heavyItems = [
-        interventionDatabase.find((i) => i.id === 'solar-rooftop-starter')!,
-        interventionDatabase.find((i) => i.id === 'led-retrofit')!,
-      ];
-    } else {
-      heavyItems = [
-        interventionDatabase.find((i) => i.id === 'ie4-motors')!,
-        interventionDatabase.find((i) => i.id === 'rainwater-harvesting')!,
-        interventionDatabase.find((i) => i.id === 'cool-roof')!,
-      ];
-    }
-    const highImpactItems = heavyItems.filter((_, idx, arr) => {
-      const sum = arr.slice(0, idx + 1).reduce((acc, x) => acc + x.estimatedInvestment, 0);
-      return sum <= currentBudget;
-    });
-
-    const computeMetrics = (items: InterventionItem[]) => {
-      const totalInvestment = items.reduce((acc, i) => acc + i.estimatedInvestment, 0);
-      const annualSavings = items.reduce((acc, i) => acc + i.annualSavings, 0);
-      const co2Reduction = Number(items.reduce((acc, i) => acc + i.co2Reduction, 0).toFixed(1));
-      const waterSavings = items.reduce((acc, i) => acc + i.waterSavings, 0);
-      const avgPayback = annualSavings > 0 ? Number((totalInvestment / annualSavings).toFixed(1)) : 0;
-      const risks = Array.from(new Set(items.flatMap((i) => i.riskCategories)));
-      return { totalInvestment, annualSavings, co2Reduction, waterSavings, avgPayback, risks };
-    };
-
-    return [
-      {
-        id: 'bundle-a',
-        title: 'Energy Efficiency Starter',
-        subtitle: 'Fast payback, low risk operational quick-wins',
-        items: starterItems,
-        metrics: computeMetrics(starterItems),
-        tag: 'Quick Payback',
-      },
-      {
-        id: 'bundle-b',
-        title: 'Balanced Climate Plan',
-        subtitle: 'Multi-hazard resilience combining heat, power & water savings',
-        items: balancedItems,
-        metrics: computeMetrics(balancedItems),
-        tag: 'Recommended Plan',
-      },
-      {
-        id: 'bundle-c',
-        title: 'High-Impact Resilience Plan',
-        subtitle: 'Maximized long-term carbon reduction and renewable energy offset',
-        items: highImpactItems,
-        metrics: computeMetrics(highImpactItems),
-        tag: 'Deep Decarbonization',
-      },
-    ];
-  };
-
-  const bundles = generateBundles(budget);
-  const activeBundle = bundles.find((b) => b.id === selectedBundleId) || bundles[1];
 
   return (
     <div className="space-y-8 max-w-7xl mx-auto">
@@ -329,11 +90,11 @@ export const InterventionsPage: React.FC = () => {
             <Button
               variant="outline"
               size="sm"
-              onClick={() => setBudget(300000)}
+              onClick={() => setBudget(100000)}
               className="text-xs text-slate-200 border-slate-600 hover:bg-slate-700"
               leftIcon={<RotateCcw className="w-3 h-3 text-emerald-400" />}
             >
-              Reset to ₹3.0L Profile Budget
+              Reset to ₹1.0L Starter Budget
             </Button>
           </div>
         </div>
@@ -361,7 +122,7 @@ export const InterventionsPage: React.FC = () => {
           />
 
           <div className="flex justify-between text-[11px] text-slate-400 font-mono">
-            <span>₹1,00,000 (Min)</span>
+            <span>₹1,00,000 (Starter)</span>
             <span>₹3,00,000 (Profile Default)</span>
             <span>₹5,00,000</span>
             <span>₹10,00,000 (Max)</span>
@@ -383,7 +144,7 @@ export const InterventionsPage: React.FC = () => {
           </div>
 
           <Badge variant="slate" size="sm" icon={<Info className="w-3.5 h-3.5" />}>
-            Illustrative Demo Optimization Engine
+            Illustrative Prototype Estimates
           </Badge>
         </div>
 
@@ -522,7 +283,7 @@ export const InterventionsPage: React.FC = () => {
               Total Investment: {formatCurrencyINR(activeBundle.metrics.totalInvestment)} • Annual Savings: {formatCurrencyINR(activeBundle.metrics.annualSavings)} / yr
             </h4>
             <p className="text-xs text-slate-400">
-              Ready to simulate long-term ROI or generate your bank-ready Climate Action Passport.
+              Ready to simulate long-term ROI or generate your Finance-ready Climate Action Passport.
             </p>
           </div>
 
@@ -534,7 +295,7 @@ export const InterventionsPage: React.FC = () => {
               leftIcon={<TrendingUp className="w-4 h-4 text-emerald-400" />}
               className="w-full sm:w-auto text-slate-200 border-slate-700 hover:bg-slate-800"
             >
-              Simulate This Plan
+              Simulate Outcomes
             </Button>
 
             <Button
@@ -646,7 +407,7 @@ export const InterventionsPage: React.FC = () => {
                 SIDBI & Ministry of MSME Subsidy Status
               </span>
               <p className="text-[11px] text-emerald-800">
-                Eligible for 15% capital subsidy under SAMARTH scheme and SIDBI 2.5% interest subvention for MSME green upgrades.
+                Eligible for capital subsidy under SAMARTH scheme and interest subvention for MSME green upgrades.
               </p>
             </div>
           </div>

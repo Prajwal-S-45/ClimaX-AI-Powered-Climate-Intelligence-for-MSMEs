@@ -1,16 +1,13 @@
-import React, { useState, useEffect } from 'react';
+import React from 'react';
 import { Link, useNavigate } from 'react-router-dom';
 import {
   TrendingUp,
   DollarSign,
-  Droplets,
-  Zap,
   ArrowRight,
   RefreshCw,
   FileCheck2,
   Sliders,
   CheckCircle2,
-  Info,
   ShieldCheck,
   AlertCircle,
   HelpCircle,
@@ -32,11 +29,6 @@ import {
 } from 'recharts';
 import {
   Card,
-  CardHeader,
-  CardTitle,
-  CardDescription,
-  CardContent,
-  CardFooter,
   MetricCard,
   Slider,
   Select,
@@ -44,96 +36,32 @@ import {
   Button,
   Badge
 } from '../components/ui';
-import { OnboardingFormData } from '../types';
+import { useClimate } from '../context/ClimateContext';
 import { formatCurrencyINR } from '../utils/helpers';
-
-const defaultProfile: OnboardingFormData = {
-  businessName: 'Shakti Precision Components',
-  businessType: 'Private Limited',
-  industry: 'Manufacturing',
-  location: 'Bengaluru, Karnataka',
-  yearsOperating: 8,
-  numberOfEmployees: 28,
-  monthlyElectricityBillINR: 78000,
-  monthlyWaterConsumptionLitres: 85000,
-  monthlyFuelExpenseINR: 22000,
-  operatingHoursPerDay: 10,
-  workingDaysPerMonth: 26,
-  climateConcerns: ['Extreme heat', 'Rising energy costs', 'Water scarcity'],
-  availableBudgetINR: 300000,
-  preferredHorizonYears: 5,
-  maxPaybackPeriodYears: 4,
-};
 
 export const SimulatorPage: React.FC = () => {
   const navigate = useNavigate();
-  const [profile, setProfile] = useState<OnboardingFormData>(defaultProfile);
+  const {
+    profile,
+    budget,
+    setBudget,
+    electricityCost,
+    setElectricityCost,
+    operatingHours,
+    setOperatingHours,
+    selectedBundleId,
+    setSelectedBundleId,
+    bundles,
+    activeBundle,
+    resetToDefaults,
+  } = useClimate();
 
-  // User Interactive State Controls
-  const [budget, setBudget] = useState<number>(300000);
-  const [electricityCost, setElectricityCost] = useState<number>(78000);
-  const [operatingHours, setOperatingHours] = useState<number>(10);
-  const [selectedBundle, setSelectedBundle] = useState<string>('bundle-b');
-
-  useEffect(() => {
-    try {
-      const saved = localStorage.getItem('msme_climate_profile');
-      if (saved) {
-        const parsed = JSON.parse(saved);
-        setProfile({ ...defaultProfile, ...parsed });
-        if (parsed.availableBudgetINR) setBudget(Number(parsed.availableBudgetINR));
-        if (parsed.monthlyElectricityBillINR) setElectricityCost(Number(parsed.monthlyElectricityBillINR));
-        if (parsed.operatingHoursPerDay) setOperatingHours(Number(parsed.operatingHoursPerDay));
-      }
-    } catch (e) {
-      console.error('Error loading profile in simulator:', e);
-    }
-  }, []);
-
-  // Dynamic Calculation Logic
-  const getBundleConfig = (bundleKey: string) => {
-    switch (bundleKey) {
-      case 'bundle-a':
-        return {
-          name: 'Energy Efficiency Starter',
-          capexFactor: 0.65,
-          savingsFactor: 0.40,
-          co2Rate: 15.7,
-          waterSavings: 120000,
-          riskCategories: ['Energy Vulnerability', 'Water Stress'],
-        };
-      case 'bundle-c':
-        return {
-          name: 'High-Impact Resilience Plan',
-          capexFactor: 0.95,
-          savingsFactor: 0.65,
-          co2Rate: 35.0,
-          waterSavings: 280000,
-          riskCategories: ['Energy Vulnerability', 'Water Stress', 'Flood Exposure'],
-        };
-      case 'bundle-b':
-      default:
-        return {
-          name: 'Balanced Climate Plan',
-          capexFactor: 0.85,
-          savingsFactor: 0.55,
-          co2Rate: 28.5,
-          waterSavings: 0,
-          riskCategories: ['Energy Vulnerability', 'Extreme Heat'],
-        };
-    }
-  };
-
-  const config = getBundleConfig(selectedBundle);
-
-  // Calculated metrics
-  const initialInvestment = Math.min(budget, Math.round(budget * config.capexFactor));
-  const annualSavings = Math.round(
-    (electricityCost * 12 * (operatingHours / 10)) * config.savingsFactor
-  );
-  const paybackYears = annualSavings > 0 ? Number((initialInvestment / annualSavings).toFixed(1)) : 0;
-  const annualCO2Reduction = Number((config.co2Rate * (initialInvestment / 250000)).toFixed(1));
-  const annualWaterSavings = config.waterSavings;
+  // Active bundle dynamic metrics directly from centralized climate context
+  const initialInvestment = activeBundle.metrics.totalInvestment;
+  const annualSavings = activeBundle.metrics.annualSavings;
+  const paybackYears = activeBundle.metrics.avgPayback;
+  const annualCO2Reduction = activeBundle.metrics.co2Reduction;
+  const annualWaterSavings = activeBundle.metrics.waterSavings;
 
   // Before vs After comparison values
   const monthlyCostBefore = electricityCost;
@@ -141,7 +69,7 @@ export const SimulatorPage: React.FC = () => {
   const monthlyCostAfter = Math.max(10000, monthlyCostBefore - monthlySavings);
 
   const monthlyCO2Before = 14.2;
-  const monthlyCO2After = Number((monthlyCO2Before - annualCO2Reduction / 12).toFixed(1));
+  const monthlyCO2After = Number(Math.max(1.0, monthlyCO2Before - annualCO2Reduction / 12).toFixed(1));
 
   // 5-Year Cumulative Cash Flow Data
   const cumulativeCashFlowData = [
@@ -156,26 +84,20 @@ export const SimulatorPage: React.FC = () => {
   // Before vs After Utility Comparison Data
   const beforeAfterCostData = [
     { category: 'Monthly Electricity', baseline: monthlyCostBefore, optimized: monthlyCostAfter },
-    { category: 'Monthly Diesel Fuel', baseline: 22000, optimized: 12000 },
-    { category: 'Monthly Water Tankers', baseline: 13000, optimized: Math.max(5000, 13000 - (annualWaterSavings / 12) * 0.1) },
+    { category: 'Monthly Fuel', baseline: 22000, optimized: 14000 },
+    { category: 'Monthly Water', baseline: 13000, optimized: Math.max(5000, 13000 - (annualWaterSavings / 12) * 0.08) },
   ];
 
-  // Emissions Trajectory Data
+  // Emissions Trajectory Data (Strictly capped against baseline 170.4 tCO2e/yr)
+  const baselineAnnualCO2 = 170.4;
   const emissionsTrajectoryData = [
-    { year: 'Baseline', baselineCO2: 170, optimizedCO2: 170 },
-    { year: 'Year 1', baselineCO2: 175, optimizedCO2: 175 - annualCO2Reduction },
-    { year: 'Year 2', baselineCO2: 180, optimizedCO2: Math.max(80, 180 - annualCO2Reduction * 2) },
-    { year: 'Year 3', baselineCO2: 185, optimizedCO2: Math.max(70, 185 - annualCO2Reduction * 3) },
-    { year: 'Year 4', baselineCO2: 190, optimizedCO2: Math.max(60, 190 - annualCO2Reduction * 3.5) },
-    { year: 'Year 5', baselineCO2: 195, optimizedCO2: Math.max(50, 195 - annualCO2Reduction * 4) },
+    { year: 'Baseline', baselineCO2: baselineAnnualCO2, optimizedCO2: baselineAnnualCO2 },
+    { year: 'Year 1', baselineCO2: baselineAnnualCO2, optimizedCO2: Number((baselineAnnualCO2 - annualCO2Reduction).toFixed(1)) },
+    { year: 'Year 2', baselineCO2: baselineAnnualCO2, optimizedCO2: Number((baselineAnnualCO2 - annualCO2Reduction * 1.1).toFixed(1)) },
+    { year: 'Year 3', baselineCO2: baselineAnnualCO2, optimizedCO2: Number((baselineAnnualCO2 - annualCO2Reduction * 1.2).toFixed(1)) },
+    { year: 'Year 4', baselineCO2: baselineAnnualCO2, optimizedCO2: Number((baselineAnnualCO2 - annualCO2Reduction * 1.25).toFixed(1)) },
+    { year: 'Year 5', baselineCO2: baselineAnnualCO2, optimizedCO2: Number((baselineAnnualCO2 - annualCO2Reduction * 1.3).toFixed(1)) },
   ];
-
-  const resetDefaults = () => {
-    setBudget(300000);
-    setElectricityCost(78000);
-    setOperatingHours(10);
-    setSelectedBundle('bundle-b');
-  };
 
   return (
     <div className="space-y-8 max-w-7xl mx-auto">
@@ -186,7 +108,7 @@ export const SimulatorPage: React.FC = () => {
             <Badge variant="teal" size="sm" icon={<TrendingUp className="w-3.5 h-3.5" />}>
               Scenario Modeling Engine
             </Badge>
-            <span className="text-xs text-slate-500 font-medium">Illustrative Estimate</span>
+            <span className="text-xs text-slate-500 font-medium">Illustrative Prototype Estimate</span>
           </div>
           <h1 className="text-2xl md:text-3xl font-extrabold text-slate-900 tracking-tight">
             Climate Investment Simulator
@@ -221,7 +143,7 @@ export const SimulatorPage: React.FC = () => {
                 Simulation Controls
               </h3>
               <Badge variant="emerald" size="sm">
-                Live Recalculation
+                Live Shared State
               </Badge>
             </div>
 
@@ -274,13 +196,12 @@ export const SimulatorPage: React.FC = () => {
             <div className="space-y-2">
               <Select
                 label="4. Selected Intervention Bundle"
-                value={selectedBundle}
-                onChange={(e) => setSelectedBundle(e.target.value)}
-                options={[
-                  { value: 'bundle-b', label: 'Balanced Climate Plan (LED + Cool Roof + IE4 Motors)' },
-                  { value: 'bundle-a', label: 'Energy Efficiency Starter (LED + Water Fixtures + Cool Roof)' },
-                  { value: 'bundle-c', label: 'High-Impact Resilience Plan (Solar Rooftop + LED)' },
-                ]}
+                value={selectedBundleId}
+                onChange={(e) => setSelectedBundleId(e.target.value)}
+                options={bundles.map((b) => ({
+                  value: b.id,
+                  label: `${b.title} (${formatCurrencyINR(b.metrics.totalInvestment)})`,
+                }))}
               />
             </div>
           </div>
@@ -290,7 +211,7 @@ export const SimulatorPage: React.FC = () => {
               variant="outline"
               size="sm"
               className="w-full text-xs"
-              onClick={resetDefaults}
+              onClick={resetToDefaults}
               leftIcon={<RefreshCw className="w-3.5 h-3.5 text-slate-500" />}
             >
               Reset Default Inputs
@@ -305,7 +226,7 @@ export const SimulatorPage: React.FC = () => {
             <MetricCard
               title="Initial Investment"
               value={formatCurrencyINR(initialInvestment)}
-              subtitle="Allocated capex"
+              subtitle="Selected bundle capex"
               accentColor="navy"
               icon={<DollarSign className="w-4 h-4" />}
             />
@@ -340,7 +261,7 @@ export const SimulatorPage: React.FC = () => {
                 <h3 className="text-lg font-extrabold text-white">Before vs After Performance</h3>
               </div>
               <Badge variant="emerald" size="sm">
-                Projected Impact
+                Active Bundle: {activeBundle.title}
               </Badge>
             </div>
 
@@ -517,9 +438,9 @@ export const SimulatorPage: React.FC = () => {
           </div>
 
           <div className="p-3 bg-white/80 rounded-xl border border-emerald-200 space-y-1">
-            <span className="font-bold text-emerald-950 block">Bank Audit Readiness</span>
+            <span className="font-bold text-emerald-950 block">Finance Documentation Readiness</span>
             <p className="text-[11px] text-slate-600">
-              Generates verifiable payback & emission abatement metrics for SIDBI green credit approval.
+              Generates structured payback & emission abatement metrics for SIDBI green credit approval.
             </p>
           </div>
         </div>
@@ -532,14 +453,14 @@ export const SimulatorPage: React.FC = () => {
           <span>Notice & Model Disclaimer</span>
         </div>
         <p className="leading-relaxed text-[11px]">
-          Illustrative estimate for prototype demonstration. All projected financial savings, payback timelines, and carbon abatement figures are model outputs generated for planning and bank project proposal submission. They do not constitute guaranteed financial returns or legally binding commitments.
+          Illustrative estimate for prototype demonstration. All projected financial savings, payback timelines, and carbon abatement figures are model outputs generated for planning and finance documentation submission. They do not constitute guaranteed financial returns or legally binding commitments.
         </p>
       </div>
 
       {/* Bottom Action CTA */}
       <div className="flex flex-col sm:flex-row items-center justify-between gap-4 border-t border-slate-200 pt-6">
         <div className="text-xs text-slate-500">
-          Ready to issue your formal bank-verifiable Climate Action Passport?
+          Ready to issue your formal Finance-ready Climate Action Passport?
         </div>
 
         <div className="flex items-center gap-3 w-full sm:w-auto">

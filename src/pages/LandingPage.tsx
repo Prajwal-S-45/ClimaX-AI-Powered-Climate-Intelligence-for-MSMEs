@@ -1,23 +1,51 @@
 import React from 'react';
-import { Link } from 'react-router-dom';
-import { 
-  ArrowRight, 
-  ShieldAlert, 
-  Sliders, 
-  FileCheck2, 
-  BarChart3, 
-  Building2, 
-  Coins, 
-  Wrench, 
-  TrendingUp, 
-  Flame, 
-  CheckCircle2, 
+import { Link, useNavigate } from 'react-router-dom';
+import {
+  ArrowRight,
+  ShieldAlert,
+  Sliders,
+  FileCheck2,
+  BarChart3,
+  Building2,
+  Coins,
+  Wrench,
+  TrendingUp,
+  Flame,
+  CheckCircle2,
   Sparkles,
-  ChevronDown
+  ChevronDown,
+  Play
 } from 'lucide-react';
 import { Button, Card, Badge } from '../components/ui';
+import { OnboardingFormData } from '../types';
+
+export const demoMSMEProfile: OnboardingFormData & { isDemoMode: boolean } = {
+  businessName: 'Shakti Precision Components',
+  businessType: 'Private Limited',
+  industry: 'Manufacturing',
+  location: 'Bengaluru, Karnataka',
+  yearsOperating: 8,
+  numberOfEmployees: 28,
+  monthlyElectricityBillINR: 78000,
+  monthlyWaterConsumptionLitres: 85000,
+  monthlyFuelExpenseINR: 22000,
+  operatingHoursPerDay: 10,
+  workingDaysPerMonth: 26,
+  climateConcerns: ['Extreme heat', 'Rising energy costs', 'Water scarcity'],
+  availableBudgetINR: 300000,
+  preferredHorizonYears: 5,
+  maxPaybackPeriodYears: 4,
+  isDemoMode: true,
+};
 
 export const LandingPage: React.FC = () => {
+  const navigate = useNavigate();
+
+  const handleLaunchDemo = () => {
+    localStorage.setItem('msme_climate_profile', JSON.stringify(demoMSMEProfile));
+    navigate('/dashboard');
+  };
+
   return (
     <div className="space-y-12 py-2">
       {/* Hero Banner */}
@@ -27,9 +55,14 @@ export const LandingPage: React.FC = () => {
         <div className="absolute top-0 right-1/4 w-64 h-64 rounded-full bg-teal-500/10 blur-3xl pointer-events-none" />
 
         <div className="max-w-4xl space-y-6 relative z-10">
-          <Badge variant="emerald" size="md" icon={<Sparkles className="w-3.5 h-3.5" />}>
-            AI-Powered Climate Intelligence for MSMEs
-          </Badge>
+          <div className="flex items-center gap-2 flex-wrap">
+            <Badge variant="emerald" size="md" icon={<Sparkles className="w-3.5 h-3.5" />}>
+              AI-Powered Climate Intelligence for MSMEs
+            </Badge>
+            <Badge variant="teal" size="sm">
+              Hackathon Presentation Mode Ready
+            </Badge>
+          </div>
 
           <h1 className="text-3xl md:text-5xl lg:text-6xl font-extrabold text-white tracking-tight leading-tight">
             Turn Climate Risk Into <span className="text-transparent bg-clip-text bg-gradient-to-r from-emerald-400 via-teal-300 to-emerald-200">Climate Action.</span>
@@ -40,14 +73,21 @@ export const LandingPage: React.FC = () => {
           </p>
 
           <div className="pt-3 flex flex-wrap gap-4 items-center">
+            {/* Prominent Launch Live Demo Button */}
+            <Button
+              variant="primary"
+              size="lg"
+              onClick={handleLaunchDemo}
+              leftIcon={<Play className="w-5 h-5 fill-current" />}
+              rightIcon={<ArrowRight className="w-5 h-5" />}
+              className="shadow-xl shadow-emerald-900/50 bg-gradient-to-r from-emerald-500 to-teal-600 hover:from-emerald-600 hover:to-teal-700 text-white font-extrabold text-base"
+            >
+              Launch Live Demo (Shakti Precision)
+            </Button>
+
             <Link to="/onboarding">
-              <Button variant="primary" size="lg" rightIcon={<ArrowRight className="w-5 h-5" />} className="shadow-lg shadow-emerald-900/30">
-                Create Climate Profile
-              </Button>
-            </Link>
-            <Link to="/dashboard">
               <Button variant="outline" size="lg" className="bg-slate-800/80 text-slate-100 border-slate-700 hover:bg-slate-700/80">
-                Explore Demo
+                Create Custom Profile
               </Button>
             </Link>
           </div>
@@ -131,7 +171,7 @@ export const LandingPage: React.FC = () => {
               </div>
               <div className="text-xs font-semibold text-slate-400 uppercase tracking-wider mb-1">Step 4</div>
               <div className="font-bold text-sm text-white">Climate Action Passport</div>
-              <p className="text-xs text-slate-400 mt-1">Bank-ready project documentation</p>
+              <p className="text-xs text-slate-400 mt-1">Finance-ready project documentation</p>
             </div>
 
             <div className="flex flex-col items-center px-1">
@@ -148,7 +188,7 @@ export const LandingPage: React.FC = () => {
             </div>
           </div>
 
-          {/* Mobile & Tablet Vertical Flow */}
+          {/* Mobile Vertical Flow */}
           <div className="flex lg:hidden flex-col items-center space-y-3">
             <div className="w-full bg-slate-800/80 border border-slate-700/70 rounded-xl p-4 flex items-center gap-4">
               <div className="w-10 h-10 rounded-lg bg-amber-500/20 text-amber-400 flex items-center justify-center flex-shrink-0">
@@ -211,7 +251,7 @@ export const LandingPage: React.FC = () => {
         </div>
       </div>
 
-      {/* From Climate Risk to Measurable Action */}
+      {/* Structured Modules */}
       <div className="space-y-6">
         <div className="border-b border-slate-200 pb-4">
           <h2 className="text-2xl font-bold text-slate-900">From Climate Risk to Measurable Action</h2>
@@ -219,7 +259,6 @@ export const LandingPage: React.FC = () => {
         </div>
 
         <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-6">
-          {/* Card 1: Assess */}
           <Card hoverable className="space-y-4 border-slate-200 flex flex-col justify-between">
             <div className="space-y-3">
               <div className="w-11 h-11 rounded-xl bg-amber-50 text-amber-700 border border-amber-200/80 flex items-center justify-center">
@@ -238,7 +277,6 @@ export const LandingPage: React.FC = () => {
             </Link>
           </Card>
 
-          {/* Card 2: Optimize */}
           <Card hoverable className="space-y-4 border-slate-200 flex flex-col justify-between">
             <div className="space-y-3">
               <div className="w-11 h-11 rounded-xl bg-emerald-50 text-emerald-700 border border-emerald-200/80 flex items-center justify-center">
@@ -257,7 +295,6 @@ export const LandingPage: React.FC = () => {
             </Link>
           </Card>
 
-          {/* Card 3: Finance */}
           <Card hoverable className="space-y-4 border-slate-200 flex flex-col justify-between">
             <div className="space-y-3">
               <div className="w-11 h-11 rounded-xl bg-teal-50 text-teal-700 border border-teal-200/80 flex items-center justify-center">
@@ -276,7 +313,6 @@ export const LandingPage: React.FC = () => {
             </Link>
           </Card>
 
-          {/* Card 4: Verify */}
           <Card hoverable className="space-y-4 border-slate-200 flex flex-col justify-between">
             <div className="space-y-3">
               <div className="w-11 h-11 rounded-xl bg-blue-50 text-blue-700 border border-blue-200/80 flex items-center justify-center">
@@ -337,26 +373,6 @@ export const LandingPage: React.FC = () => {
               Focuses on high-efficiency equipment and waste reduction that lower monthly energy and resource bills.
             </p>
           </div>
-
-          <div className="bg-white p-5 rounded-2xl border border-slate-200/90 shadow-sm space-y-2">
-            <div className="w-10 h-10 rounded-lg bg-rose-50 text-rose-700 flex items-center justify-center">
-              <Flame className="w-5 h-5" />
-            </div>
-            <h3 className="font-bold text-slate-900 text-base">Climate Exposure</h3>
-            <p className="text-xs text-slate-600 leading-relaxed">
-              Maps localized physical hazards like flood risks, extreme heat waves, and water stress to protect business continuity.
-            </p>
-          </div>
-
-          <div className="bg-white p-5 rounded-2xl border border-slate-200/90 shadow-sm space-y-2 md:col-span-2 lg:col-span-2">
-            <div className="w-10 h-10 rounded-lg bg-teal-50 text-teal-700 flex items-center justify-center">
-              <Building2 className="w-5 h-5" />
-            </div>
-            <h3 className="font-bold text-slate-900 text-base">Need for Practical Action</h3>
-            <p className="text-xs text-slate-600 leading-relaxed">
-              Replaces theoretical targets with concrete, finance-ready project dossiers ready for bank loan submissions and supply chain disclosures.
-            </p>
-          </div>
         </div>
       </div>
 
@@ -372,16 +388,20 @@ export const LandingPage: React.FC = () => {
             Assess your risks, model budget-aligned interventions, and generate your bank-ready Climate Action Passport today.
           </p>
 
-          <div className="pt-2">
-            <Link to="/onboarding">
-              <Button variant="primary" size="lg" rightIcon={<ArrowRight className="w-5 h-5" />} className="px-8 py-3 text-base shadow-xl shadow-emerald-900/40">
-                Build Your Climate Action Plan
-              </Button>
-            </Link>
+          <div className="pt-2 flex justify-center gap-4 flex-wrap">
+            <Button
+              variant="primary"
+              size="lg"
+              onClick={handleLaunchDemo}
+              leftIcon={<Play className="w-5 h-5 fill-current" />}
+              rightIcon={<ArrowRight className="w-5 h-5" />}
+              className="px-8 py-3 text-base shadow-xl shadow-emerald-900/40 bg-gradient-to-r from-emerald-500 to-teal-600"
+            >
+              Launch Live Demo
+            </Button>
           </div>
         </div>
       </div>
     </div>
   );
 };
-

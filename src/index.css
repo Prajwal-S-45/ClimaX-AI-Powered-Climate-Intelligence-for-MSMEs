@@ -6,6 +6,7 @@
     color: #0f172a; /* Deep Navy */
     background-color: #f8fafc; /* Slate 50 background */
     -webkit-font-smoothing: antialiased;
+    overflow-x: hidden;
   }
 
   h1, h2, h3, h4, h5, h6 {
@@ -15,7 +16,7 @@
   }
 }
 
-/* Custom scrollbar */
+/* Custom smooth scrollbar */
 ::-webkit-scrollbar {
   width: 6px;
   height: 6px;
@@ -42,10 +43,37 @@
 }
 
 .saas-card-hover {
-  transition: all 0.2s cubic-bezier(0.16, 1, 0.3, 1);
+  transition: all 0.25s cubic-bezier(0.16, 1, 0.3, 1);
 }
 
 .saas-card-hover:hover {
   border-color: #cbd5e1;
-  box-shadow: 0 10px 25px -5px rgba(15, 23, 42, 0.06), 0 8px 10px -6px rgba(15, 23, 42, 0.04);
+  transform: translateY(-2px);
+  box-shadow: 0 12px 28px -5px rgba(15, 23, 42, 0.08), 0 8px 10px -6px rgba(15, 23, 42, 0.04);
+}
+
+/* Custom range slider polish */
+input[type="range"] {
+  accent-color: #059669;
+  cursor: pointer;
+}
+
+/* Print Stylesheet for Climate Action Passport */
+@media print {
+  body {
+    background-color: #ffffff !important;
+    color: #000000 !important;
+  }
+
+  header, aside, button, nav, .no-print {
+    display: none !important;
+  }
+
+  .print-only-container {
+    padding: 0 !important;
+    margin: 0 !important;
+    box-shadow: none !important;
+    border: none !important;
+    width: 100% !important;
+  }
 }

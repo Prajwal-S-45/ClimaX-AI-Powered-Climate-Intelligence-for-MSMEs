@@ -1,11 +1,9 @@
-import React, { useState, useEffect } from 'react';
+import React from 'react';
 import { Link, useNavigate } from 'react-router-dom';
 import {
-  LayoutDashboard,
   ShieldAlert,
   Zap,
   Droplets,
-  Fuel,
   DollarSign,
   TrendingUp,
   FileCheck2,
@@ -15,11 +13,7 @@ import {
   Sparkles,
   Flame,
   CloudRain,
-  Sliders,
-  CheckCircle2,
-  ExternalLink,
   ChevronRight,
-  Building2,
   MapPin
 } from 'lucide-react';
 import {
@@ -45,27 +39,8 @@ import {
   Button,
   ChartCard
 } from '../components/ui';
-import { OnboardingFormData } from '../types';
+import { useClimate } from '../context/ClimateContext';
 import { formatCurrencyINR } from '../utils/helpers';
-
-// Default demo profile fallback
-const defaultProfile: OnboardingFormData = {
-  businessName: 'Shakti Precision Components',
-  businessType: 'Private Limited',
-  industry: 'Manufacturing',
-  location: 'Bengaluru, Karnataka',
-  yearsOperating: 8,
-  numberOfEmployees: 28,
-  monthlyElectricityBillINR: 78000,
-  monthlyWaterConsumptionLitres: 85000,
-  monthlyFuelExpenseINR: 22000,
-  operatingHoursPerDay: 10,
-  workingDaysPerMonth: 26,
-  climateConcerns: ['Extreme heat', 'Rising energy costs', 'Water scarcity'],
-  availableBudgetINR: 300000,
-  preferredHorizonYears: 5,
-  maxPaybackPeriodYears: 4,
-};
 
 // Deterministic 6-month resource cost breakdown data
 const monthlyCostBreakdownData = [
@@ -79,24 +54,11 @@ const monthlyCostBreakdownData = [
 
 export const DashboardPage: React.FC = () => {
   const navigate = useNavigate();
-  const [profile, setProfile] = useState<OnboardingFormData>(defaultProfile);
-
-  useEffect(() => {
-    try {
-      const saved = localStorage.getItem('msme_climate_profile');
-      if (saved) {
-        const parsed = JSON.parse(saved);
-        setProfile({ ...defaultProfile, ...parsed });
-      }
-    } catch (e) {
-      console.error('Error loading saved profile:', e);
-    }
-  }, []);
+  const { profile, budget, activeBundle, baselineEmissions } = useClimate();
 
   const businessName = profile.businessName || 'Shakti Precision Components';
   const electricityBill = Number(profile.monthlyElectricityBillINR) || 78000;
   const waterConsumption = Number(profile.monthlyWaterConsumptionLitres) || 85000;
-  const greenBudget = Number(profile.availableBudgetINR) || 300000;
 
   return (
     <div className="space-y-6 max-w-7xl mx-auto">
@@ -165,7 +127,7 @@ export const DashboardPage: React.FC = () => {
 
         <MetricCard
           title="Available Green Budget"
-          value={formatCurrencyINR(greenBudget)}
+          value={formatCurrencyINR(budget)}
           subtitle="Allocated capex budget"
           trend={{ value: 'Budget Ready', direction: 'up', label: 'unlocked' }}
           accentColor="emerald"
@@ -173,8 +135,8 @@ export const DashboardPage: React.FC = () => {
         />
 
         <MetricCard
-          title="Estimated Emissions"
-          value="14.2 tCO₂e"
+          title="Baseline Emissions"
+          value={`${baselineEmissions.monthlyTotalCO2} tCO₂e`}
           subtitle="Monthly Scope 1 & 2"
           trend={{ value: 'Baseline', direction: 'neutral' }}
           accentColor="navy"
@@ -302,42 +264,42 @@ export const DashboardPage: React.FC = () => {
             <CardHeader>
               <CardTitle className="text-base flex items-center gap-2">
                 <Sparkles className="w-5 h-5 text-emerald-600" />
-                Opportunity Snapshot
+                Selected Opportunity Snapshot
               </CardTitle>
               <CardDescription>
-                Potential savings from recommended green interventions
+                Projected impact from active bundle ({activeBundle.title})
               </CardDescription>
             </CardHeader>
 
             <CardContent className="space-y-3">
               <div className="p-3.5 rounded-xl bg-slate-50 border border-slate-200 space-y-1">
-                <span className="text-xs text-slate-500 font-medium">Potential Annual Energy Savings</span>
+                <span className="text-xs text-slate-500 font-medium">Potential Annual Savings</span>
                 <div className="text-lg font-extrabold text-slate-900">
-                  {formatCurrencyINR(185000)} <span className="text-xs text-emerald-700 font-semibold">/ year</span>
+                  {formatCurrencyINR(activeBundle.metrics.annualSavings)} <span className="text-xs text-emerald-700 font-semibold">/ year</span>
                 </div>
               </div>
 
               <div className="p-3.5 rounded-xl bg-slate-50 border border-slate-200 space-y-1">
                 <span className="text-xs text-slate-500 font-medium">Potential Water Savings</span>
                 <div className="text-lg font-extrabold text-slate-900">
-                  340,000 Litres <span className="text-xs text-teal-700 font-semibold">/ year</span>
+                  {activeBundle.metrics.waterSavings > 0 ? `${(activeBundle.metrics.waterSavings / 1000).toFixed(0)}k Litres` : 'N/A'} <span className="text-xs text-teal-700 font-semibold">/ year</span>
                 </div>
               </div>
 
               <div className="p-3.5 rounded-xl bg-slate-50 border border-slate-200 space-y-1">
                 <span className="text-xs text-slate-500 font-medium">Potential CO₂ Reduction</span>
                 <div className="text-lg font-extrabold text-slate-900">
-                  38.5 Tons <span className="text-xs text-emerald-700 font-semibold">/ year</span>
+                  {activeBundle.metrics.co2Reduction} Tons <span className="text-xs text-emerald-700 font-semibold">/ year</span>
                 </div>
               </div>
 
               <div className="p-3.5 rounded-xl bg-emerald-50/70 border border-emerald-200 space-y-1">
                 <span className="text-xs text-emerald-800 font-medium">Estimated Investment Capex</span>
                 <div className="text-lg font-extrabold text-emerald-800">
-                  {formatCurrencyINR(280000)}
+                  {formatCurrencyINR(activeBundle.metrics.totalInvestment)}
                 </div>
                 <p className="text-[11px] text-emerald-700 font-medium">
-                  Fits within your ₹3,00,000 available green budget!
+                  Fits within your {formatCurrencyINR(budget)} available green budget!
                 </p>
               </div>
             </CardContent>
@@ -359,21 +321,21 @@ export const DashboardPage: React.FC = () => {
                   <FileCheck2 className="w-5 h-5 text-emerald-600" />
                   Climate Action Passport
                 </CardTitle>
-                <Badge variant="amber" size="sm">
+                <Badge variant="purple" size="sm">
                   Draft Ready
                 </Badge>
               </div>
-              <CardDescription>Official bank-ready green verification passport</CardDescription>
+              <CardDescription>Structured project documentation for financing</CardDescription>
             </CardHeader>
 
             <CardContent className="space-y-3">
               <div className="p-3 bg-amber-50/80 border border-amber-200 rounded-xl space-y-1">
                 <div className="flex items-center gap-2 text-xs font-bold text-amber-900">
                   <Sparkles className="w-4 h-4 text-amber-700" />
-                  <span>Status: Not yet generated</span>
+                  <span>Status: Configured ({activeBundle.title})</span>
                 </div>
                 <p className="text-xs text-amber-800">
-                  Select green interventions and submit project evidence to issue a bank-verifiable digital passport.
+                  Select green interventions and submit project evidence to issue a Finance-ready digital passport.
                 </p>
               </div>
             </CardContent>
@@ -544,7 +506,7 @@ export const DashboardPage: React.FC = () => {
               Optimize My Climate Investment
             </h2>
             <p className="text-xs md:text-sm text-slate-300 leading-relaxed">
-              Select and bundle optimal climate interventions based on your available ₹3,00,000 capex budget to maximize ROI and lower operational risks.
+              Select and bundle optimal climate interventions based on your available {formatCurrencyINR(budget)} capex budget to maximize ROI and lower operational risks.
             </p>
           </div>
 
