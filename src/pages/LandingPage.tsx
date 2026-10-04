@@ -17,6 +17,7 @@ import {
   Play
 } from 'lucide-react';
 import { Button, Card, Badge } from '../components/ui';
+import { useClimate } from '../context/ClimateContext';
 import { OnboardingFormData } from '../types';
 
 export const demoMSMEProfile: OnboardingFormData & { isDemoMode: boolean } = {
@@ -32,7 +33,7 @@ export const demoMSMEProfile: OnboardingFormData & { isDemoMode: boolean } = {
   operatingHoursPerDay: 10,
   workingDaysPerMonth: 26,
   climateConcerns: ['Extreme heat', 'Rising energy costs', 'Water scarcity'],
-  availableBudgetINR: 300000,
+  availableBudgetINR: 100000,
   preferredHorizonYears: 5,
   maxPaybackPeriodYears: 4,
   isDemoMode: true,
@@ -40,9 +41,10 @@ export const demoMSMEProfile: OnboardingFormData & { isDemoMode: boolean } = {
 
 export const LandingPage: React.FC = () => {
   const navigate = useNavigate();
+  const { resetToDefaults } = useClimate();
 
   const handleLaunchDemo = () => {
-    localStorage.setItem('msme_climate_profile', JSON.stringify(demoMSMEProfile));
+    resetToDefaults();
     navigate('/dashboard');
   };
 
