@@ -22,12 +22,14 @@ export const PassportPage: React.FC = () => {
   const { profile, activeBundle } = useClimate();
   const [copied, setCopied] = useState<boolean>(false);
 
+  const passportId = 'CAP-2026-0001';
+  const passportUrl = `${window.location.origin}/verify/${passportId}`;
+
   const handlePrint = () => {
     window.print();
   };
 
   const handleShare = () => {
-    const passportUrl = 'https://climax-passport.app/verify/CAP-2026-0001';
     navigator.clipboard.writeText(passportUrl).then(() => {
       setCopied(true);
       setTimeout(() => setCopied(false), 3000);
@@ -97,7 +99,7 @@ export const PassportPage: React.FC = () => {
         <div className="no-print p-3 bg-emerald-50 border border-emerald-200 rounded-xl text-emerald-800 text-xs flex items-center justify-between animate-fadeIn">
           <span className="flex items-center gap-2 font-semibold">
             <CheckCircle2 className="w-4 h-4 text-emerald-600" />
-            Passport Reference Link Copied: https://climax-passport.app/verify/CAP-2026-0001
+            Passport Reference Link Copied: {passportUrl}
           </span>
           <span className="text-[10px] text-emerald-600">Copied to Clipboard</span>
         </div>
