@@ -20,6 +20,8 @@ export interface InterventionBundle {
   subtitle: string;
   items: InterventionItem[];
   tag: string;
+  isFeasible: boolean;
+  amountOverBudget: number;
   metrics: {
     totalInvestment: number;
     annualSavings: number;
@@ -43,7 +45,7 @@ export const defaultProfile: OnboardingFormData = {
   operatingHoursPerDay: 10,
   workingDaysPerMonth: 26,
   climateConcerns: ['Extreme heat', 'Rising energy costs', 'Water scarcity'],
-  availableBudgetINR: 300000,
+  availableBudgetINR: 100000,
   preferredHorizonYears: 5,
   maxPaybackPeriodYears: 4,
 };
@@ -207,30 +209,50 @@ export const getBundlesForBudget = (currentBudget: number): InterventionBundle[]
     return { totalInvestment, annualSavings, co2Reduction, waterSavings, avgPayback, risks };
   };
 
+  const buildBundle = (
+    id: string,
+    title: string,
+    subtitle: string,
+    items: InterventionItem[],
+    tag: string
+  ): InterventionBundle => {
+    const metrics = computeMetrics(items);
+    const isFeasible = metrics.totalInvestment <= currentBudget;
+    const amountOverBudget = Math.max(0, metrics.totalInvestment - currentBudget);
+
+    return {
+      id,
+      title,
+      subtitle,
+      items,
+      tag,
+      isFeasible,
+      amountOverBudget,
+      metrics,
+    };
+  };
+
   return [
-    {
-      id: 'bundle-a',
-      title: 'Energy Efficiency Starter',
-      subtitle: 'Fast payback, low risk operational quick-wins',
-      items: bundleAItems,
-      metrics: computeMetrics(bundleAItems),
-      tag: 'Quick Payback',
-    },
-    {
-      id: 'bundle-b',
-      title: 'Balanced Climate Plan',
-      subtitle: 'Multi-hazard resilience combining heat, power & water savings',
-      items: bundleBItems,
-      metrics: computeMetrics(bundleBItems),
-      tag: 'Recommended Plan',
-    },
-    {
-      id: 'bundle-c',
-      title: 'High-Impact Resilience Plan',
-      subtitle: 'Maximized long-term carbon reduction and renewable energy offset',
-      items: bundleCItems,
-      metrics: computeMetrics(bundleCItems),
-      tag: 'Deep Decarbonization',
-    },
+    buildBundle(
+      'bundle-a',
+      'Energy Efficiency Starter',
+      'Fast payback, low risk operational quick-wins',
+      bundleAItems,
+      'Quick Payback'
+    ),
+    buildBundle(
+      'bundle-b',
+      'Balanced Climate Plan',
+      'Multi-hazard resilience combining heat, power & water savings',
+      bundleBItems,
+      'Recommended Plan'
+    ),
+    buildBundle(
+      'bundle-c',
+      'High-Impact Resilience Plan',
+      'Maximized long-term carbon reduction and renewable energy offset',
+      bundleCItems,
+      'Deep Decarbonization'
+    ),
   ];
 };
