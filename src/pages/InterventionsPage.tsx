@@ -152,23 +152,40 @@ export const InterventionsPage: React.FC = () => {
         <div className="grid grid-cols-1 lg:grid-cols-3 gap-6">
           {bundles.map((bundle) => {
             const isSelected = selectedBundleId === bundle.id;
+            const isFeasible = bundle.isFeasible;
 
             return (
               <Card
                 key={bundle.id}
-                className={`space-y-5 flex flex-col justify-between transition-all duration-200 cursor-pointer ${
+                className={`space-y-5 flex flex-col justify-between transition-all duration-200 ${
+                  isFeasible ? 'cursor-pointer' : 'opacity-80 bg-slate-50/60 cursor-not-allowed'
+                } ${
                   isSelected
                     ? 'border-2 border-emerald-500 ring-4 ring-emerald-500/10 bg-gradient-to-b from-white to-emerald-50/20 shadow-md'
                     : 'border border-slate-200 hover:border-slate-300 hover:shadow-xs'
                 }`}
-                onClick={() => setSelectedBundleId(bundle.id)}
+                onClick={() => {
+                  if (isFeasible) setSelectedBundleId(bundle.id);
+                }}
               >
                 <div className="space-y-4">
-                  {/* Card Header Tag */}
-                  <div className="flex items-center justify-between">
-                    <Badge variant={isSelected ? 'emerald' : 'slate'} size="sm">
-                      {bundle.tag}
-                    </Badge>
+                  {/* Card Header Tag & Status */}
+                  <div className="flex items-center justify-between gap-2 flex-wrap">
+                    <div className="flex items-center gap-1.5 flex-wrap">
+                      <Badge variant={isSelected ? 'emerald' : 'slate'} size="sm">
+                        {bundle.tag}
+                      </Badge>
+
+                      {isFeasible ? (
+                        <Badge variant="emerald" size="sm">
+                          Within Budget
+                        </Badge>
+                      ) : (
+                        <Badge variant="rose" size="sm">
+                          Over Budget ({formatCurrencyINR(bundle.amountOverBudget)} above)
+                        </Badge>
+                      )}
+                    </div>
 
                     {isSelected && (
                       <span className="text-xs font-bold text-emerald-700 bg-emerald-100 px-2.5 py-0.5 rounded-full flex items-center gap-1">
@@ -254,15 +271,16 @@ export const InterventionsPage: React.FC = () => {
 
                 <div className="pt-2">
                   <Button
-                    variant={isSelected ? 'primary' : 'outline'}
+                    variant={isSelected ? 'primary' : isFeasible ? 'outline' : 'ghost'}
                     size="sm"
                     className="w-full"
+                    disabled={!isFeasible}
                     onClick={(e) => {
                       e.stopPropagation();
-                      setSelectedBundleId(bundle.id);
+                      if (isFeasible) setSelectedBundleId(bundle.id);
                     }}
                   >
-                    {isSelected ? 'Bundle Selected' : 'Select This Bundle'}
+                    {isSelected ? 'Bundle Selected' : isFeasible ? 'Select This Bundle' : `Over Budget (${formatCurrencyINR(bundle.amountOverBudget)} above)`}
                   </Button>
                 </div>
               </Card>
