@@ -10,6 +10,7 @@ import { InterventionsPage } from './pages/InterventionsPage';
 import { SimulatorPage } from './pages/SimulatorPage';
 import { PassportPage } from './pages/PassportPage';
 import { ImpactPage } from './pages/ImpactPage';
+import { VerificationPage } from './pages/VerificationPage';
 
 export const App: React.FC = () => {
   return (
@@ -25,6 +26,7 @@ export const App: React.FC = () => {
             <Route path="simulator" element={<SimulatorPage />} />
             <Route path="passport" element={<PassportPage />} />
             <Route path="impact" element={<ImpactPage />} />
+            <Route path="verify/:passportId" element={<VerificationPage />} />
           </Route>
         </Routes>
       </BrowserRouter>
