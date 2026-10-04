@@ -322,7 +322,7 @@ export const DashboardPage: React.FC = () => {
                   Climate Action Passport
                 </CardTitle>
                 <Badge variant="purple" size="sm">
-                  Draft Ready
+                  Ready for Review
                 </Badge>
               </div>
               <CardDescription>Structured project documentation for financing</CardDescription>
@@ -332,7 +332,7 @@ export const DashboardPage: React.FC = () => {
               <div className="p-3 bg-amber-50/80 border border-amber-200 rounded-xl space-y-1">
                 <div className="flex items-center gap-2 text-xs font-bold text-amber-900">
                   <Sparkles className="w-4 h-4 text-amber-700" />
-                  <span>Status: Configured ({activeBundle.title})</span>
+                  <span>Status: Ready for Review ({activeBundle.title})</span>
                 </div>
                 <p className="text-xs text-amber-800">
                   Select green interventions and submit project evidence to issue a Finance-ready digital passport.
