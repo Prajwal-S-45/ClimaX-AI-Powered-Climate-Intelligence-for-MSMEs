@@ -1,5 +1,6 @@
-import React, { useState, useEffect } from 'react';
+import React from 'react';
 import { useNavigate, Link } from 'react-router-dom';
+import { useClimate } from '../context/ClimateContext';
 import {
   ShieldAlert,
   Flame,
@@ -53,7 +54,7 @@ const defaultProfile: OnboardingFormData = {
   operatingHoursPerDay: 10,
   workingDaysPerMonth: 26,
   climateConcerns: ['Extreme heat', 'Rising energy costs', 'Water scarcity'],
-  availableBudgetINR: 300000,
+  availableBudgetINR: 100000,
   preferredHorizonYears: 5,
   maxPaybackPeriodYears: 4,
 };
@@ -68,18 +69,7 @@ const radarData = [
 
 export const ClimateRiskPage: React.FC = () => {
   const navigate = useNavigate();
-  const [profile, setProfile] = useState<OnboardingFormData>(defaultProfile);
-
-  useEffect(() => {
-    try {
-      const saved = localStorage.getItem('msme_climate_profile');
-      if (saved) {
-        setProfile({ ...defaultProfile, ...JSON.parse(saved) });
-      }
-    } catch (e) {
-      console.error('Error loading saved profile:', e);
-    }
-  }, []);
+  const { profile, budget } = useClimate();
 
   const businessName = profile.businessName || 'Shakti Precision Components';
   const location = profile.location || 'Bengaluru, Karnataka';
@@ -482,7 +472,7 @@ export const ClimateRiskPage: React.FC = () => {
               Turn Identified Risks Into Bankable Interventions
             </h2>
             <p className="text-xs md:text-sm text-slate-300 leading-relaxed">
-              Use our Intervention Optimizer to select cost-effective green upgrades tailored for {businessName} within your ₹3,00,000 budget constraint.
+              Use our Intervention Optimizer to select cost-effective green upgrades tailored for {businessName} within your ₹1,00,000 budget constraint.
             </p>
           </div>
 

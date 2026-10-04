@@ -73,7 +73,7 @@ const demoBusinessData: OnboardingFormData = {
   operatingHoursPerDay: 10,
   workingDaysPerMonth: 26,
   climateConcerns: ['Extreme heat', 'Rising energy costs', 'Water scarcity'],
-  availableBudgetINR: 300000,
+  availableBudgetINR: 100000,
   preferredHorizonYears: 5,
   maxPaybackPeriodYears: 4,
 };
