@@ -79,9 +79,24 @@ const initialEvidenceList: EvidenceItem[] = [
   },
 ];
 
+const EVIDENCE_STORAGE_KEY = 'msme_impact_evidence_CAP-2026-0001';
+
 export const ImpactPage: React.FC = () => {
   const [activeTab, setActiveTab] = useState<'before' | 'after'>('after');
-  const [evidenceList, setEvidenceList] = useState<EvidenceItem[]>(initialEvidenceList);
+  const [evidenceList, setEvidenceList] = useState<EvidenceItem[]>(() => {
+    try {
+      const saved = localStorage.getItem(EVIDENCE_STORAGE_KEY);
+      if (saved) {
+        const parsed = JSON.parse(saved);
+        if (Array.isArray(parsed) && parsed.length > 0) {
+          return parsed;
+        }
+      }
+    } catch (e) {
+      console.error('Error loading saved evidence list:', e);
+    }
+    return initialEvidenceList;
+  });
   const [showUploadModal, setShowUploadModal] = useState<boolean>(false);
   const [selectedCategory, setSelectedCategory] = useState<EvidenceItem['category']>('electricity bill');
   const [mockFileName, setMockFileName] = useState<string>('');
@@ -164,7 +179,13 @@ export const ImpactPage: React.FC = () => {
       fileSize: '1.5 MB',
     };
 
-    setEvidenceList([newItem, ...evidenceList]);
+    const updatedList = [newItem, ...evidenceList];
+    setEvidenceList(updatedList);
+    try {
+      localStorage.setItem(EVIDENCE_STORAGE_KEY, JSON.stringify(updatedList));
+    } catch (err) {
+      console.error('Error saving evidence list to localStorage:', err);
+    }
     setMockFileName('');
     setIsUploading(false);
     setShowUploadModal(false);
