@@ -157,8 +157,22 @@ export const ImpactPage: React.FC = () => {
     setIsUploading(true);
     setUploadError(null);
 
-    // Duplicate check on filename or reference
-    const isDuplicate = evidenceList.some(
+    // Read latest stored records to support multi-tab additions without dropping records
+    let currentList = evidenceList;
+    try {
+      const saved = localStorage.getItem(EVIDENCE_STORAGE_KEY);
+      if (saved) {
+        const parsed = JSON.parse(saved);
+        if (Array.isArray(parsed)) {
+          currentList = parsed;
+        }
+      }
+    } catch (e) {
+      console.error('Error reading current evidence list:', e);
+    }
+
+    // Duplicate check on filename or reference against latest list
+    const isDuplicate = currentList.some(
       (item) => item.fileName.toLowerCase() === trimmedFileName.toLowerCase() ||
                 item.name.toLowerCase() === trimmedFileName.toLowerCase()
     );
@@ -179,16 +193,18 @@ export const ImpactPage: React.FC = () => {
       fileSize: '1.5 MB',
     };
 
-    const updatedList = [newItem, ...evidenceList];
-    setEvidenceList(updatedList);
+    const updatedList = [newItem, ...currentList.filter((item) => item.id !== newItem.id)];
     try {
       localStorage.setItem(EVIDENCE_STORAGE_KEY, JSON.stringify(updatedList));
+      setEvidenceList(updatedList);
+      setMockFileName('');
+      setIsUploading(false);
+      setShowUploadModal(false);
     } catch (err) {
       console.error('Error saving evidence list to localStorage:', err);
+      setUploadError('Failed to save evidence record. Please try again.');
+      setIsUploading(false);
     }
-    setMockFileName('');
-    setIsUploading(false);
-    setShowUploadModal(false);
   };
 
   return (
@@ -468,8 +484,9 @@ export const ImpactPage: React.FC = () => {
             )}
 
             <div className="space-y-1">
-              <label className="font-bold text-slate-800 block">Select Document Category:</label>
+              <label htmlFor="evidence-category-select" className="font-bold text-slate-800 block">Select Document Category:</label>
               <select
+                id="evidence-category-select"
                 value={selectedCategory}
                 onChange={(e) => setSelectedCategory(e.target.value as any)}
                 className="w-full p-2.5 bg-white border border-slate-300 rounded-xl text-slate-900 focus:ring-2 focus:ring-emerald-500 focus:outline-none"
@@ -482,8 +499,9 @@ export const ImpactPage: React.FC = () => {
             </div>
 
             <div className="space-y-1">
-              <label className="font-bold text-slate-800 block">Mock File Name / Reference:</label>
+              <label htmlFor="evidence-file-name-input" className="font-bold text-slate-800 block">Mock File Name / Reference:</label>
               <input
+                id="evidence-file-name-input"
                 type="text"
                 placeholder="e.g. electric_bill_oct2026.pdf"
                 value={mockFileName}

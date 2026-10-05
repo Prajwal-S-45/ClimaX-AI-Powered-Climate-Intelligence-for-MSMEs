@@ -40,6 +40,7 @@ import {
   ProgressBar
 } from '../components/ui';
 import { OnboardingFormData } from '../types';
+import { formatCurrencyINR } from '../utils/helpers';
 
 const defaultProfile: OnboardingFormData = {
   businessName: 'Shakti Precision Components',
@@ -472,7 +473,7 @@ export const ClimateRiskPage: React.FC = () => {
               Turn Identified Risks Into Bankable Interventions
             </h2>
             <p className="text-xs md:text-sm text-slate-300 leading-relaxed">
-              Use our Intervention Optimizer to select cost-effective green upgrades tailored for {businessName} within your ₹1,00,000 budget constraint.
+              Use our Intervention Optimizer to select cost-effective green upgrades tailored for {businessName} within your {formatCurrencyINR(budget)} budget constraint.
             </p>
           </div>
 
