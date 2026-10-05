@@ -23,6 +23,52 @@ import { useClimate } from '../context/ClimateContext';
 import { interventionDatabase, InterventionItem } from '../utils/climateEngine';
 import { formatCurrencyINR } from '../utils/helpers';
 
+// Piecewise mapping helper functions for budget slider milestones:
+// Milestone 0: 0% (pos 0)   -> ₹1,00,000
+// Milestone 1: 33% (pos 100) -> ₹3,00,000
+// Milestone 2: 67% (pos 200) -> ₹5,00,000
+// Milestone 3: 100% (pos 300)-> ₹10,00,000
+
+const budgetToSliderPosition = (val: number): number => {
+  if (val <= 100000) return 0;
+  if (val <= 300000) {
+    return ((val - 100000) / (300000 - 100000)) * 100;
+  }
+  if (val <= 500000) {
+    return 100 + ((val - 300000) / (500000 - 300000)) * 100;
+  }
+  if (val <= 1000000) {
+    return 200 + ((val - 500000) / (1000000 - 500000)) * 100;
+  }
+  return 300;
+};
+
+const sliderPositionToBudget = (pos: number): number => {
+  if (pos <= 0) return 100000;
+  if (pos >= 300) return 1000000;
+
+  // Snap exactly to milestone values if close
+  if (Math.abs(pos - 0) < 0.5) return 100000;
+  if (Math.abs(pos - 100) < 0.5) return 300000;
+  if (Math.abs(pos - 200) < 0.5) return 500000;
+  if (Math.abs(pos - 300) < 0.5) return 1000000;
+
+  let rawBudget = 100000;
+  if (pos <= 100) {
+    const ratio = pos / 100;
+    rawBudget = 100000 + ratio * (300000 - 100000);
+  } else if (pos <= 200) {
+    const ratio = (pos - 100) / 100;
+    rawBudget = 300000 + ratio * (500000 - 300000);
+  } else {
+    const ratio = (pos - 200) / 100;
+    rawBudget = 500000 + ratio * (1000000 - 500000);
+  }
+
+  // Round to nearest 5,000 step for clean budget increments
+  return Math.round(rawBudget / 5000) * 5000;
+};
+
 export const InterventionsPage: React.FC = () => {
   const navigate = useNavigate();
   const {
@@ -102,7 +148,7 @@ export const InterventionsPage: React.FC = () => {
         {/* Budget Adjustment Slider */}
         <div className="space-y-3">
           <div className="flex justify-between items-center text-xs">
-            <span className="font-semibold text-slate-300 flex items-center gap-1.5">
+            <span id="budget-slider-label" className="font-semibold text-slate-300 flex items-center gap-1.5">
               <DollarSign className="w-4 h-4 text-emerald-400" />
               Customize Available Capital Budget (INR):
             </span>
@@ -113,19 +159,29 @@ export const InterventionsPage: React.FC = () => {
 
           <input
             type="range"
-            min={100000}
-            max={1000000}
-            step={25000}
-            value={budget}
-            onChange={(e) => setBudget(Number(e.target.value))}
+            min={0}
+            max={300}
+            step={1}
+            value={budgetToSliderPosition(budget)}
+            onChange={(e) => setBudget(sliderPositionToBudget(Number(e.target.value)))}
+            aria-label="Available capital budget in INR"
+            aria-labelledby="budget-slider-label"
             className="w-full h-2 bg-slate-700 rounded-lg appearance-none cursor-pointer accent-emerald-500"
           />
 
           <div className="flex justify-between text-[11px] text-slate-400 font-mono">
-            <span>₹1,00,000 (Starter)</span>
-            <span>₹3,00,000 (Profile Default)</span>
-            <span>₹5,00,000</span>
-            <span>₹10,00,000 (Max)</span>
+            <span onClick={() => setBudget(100000)} className="cursor-pointer hover:text-emerald-400 transition-colors">
+              ₹1,00,000 (Starter)
+            </span>
+            <span onClick={() => setBudget(300000)} className="cursor-pointer hover:text-emerald-400 transition-colors">
+              ₹3,00,000 (Profile Default)
+            </span>
+            <span onClick={() => setBudget(500000)} className="cursor-pointer hover:text-emerald-400 transition-colors">
+              ₹5,00,000
+            </span>
+            <span onClick={() => setBudget(1000000)} className="cursor-pointer hover:text-emerald-400 transition-colors">
+              ₹10,00,000 (Max)
+            </span>
           </div>
         </div>
       </Card>
@@ -157,13 +213,11 @@ export const InterventionsPage: React.FC = () => {
             return (
               <Card
                 key={bundle.id}
-                className={`space-y-5 flex flex-col justify-between transition-all duration-200 ${
-                  isFeasible ? 'cursor-pointer' : 'opacity-80 bg-slate-50/60 cursor-not-allowed'
-                } ${
-                  isSelected
+                className={`space-y-5 flex flex-col justify-between transition-all duration-200 ${isFeasible ? 'cursor-pointer' : 'opacity-80 bg-slate-50/60 cursor-not-allowed'
+                  } ${isSelected
                     ? 'border-2 border-emerald-500 ring-4 ring-emerald-500/10 bg-gradient-to-b from-white to-emerald-50/20 shadow-md'
                     : 'border border-slate-200 hover:border-slate-300 hover:shadow-xs'
-                }`}
+                  }`}
                 onClick={() => {
                   if (isFeasible) setSelectedBundleId(bundle.id);
                 }}
