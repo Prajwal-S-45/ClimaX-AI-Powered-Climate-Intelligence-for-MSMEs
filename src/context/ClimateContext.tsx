@@ -43,7 +43,7 @@ export const ClimateProvider: React.FC<{ children: React.ReactNode }> = ({ child
         const parsed = JSON.parse(saved);
         const validBudget = (parsed.budget && parsed.budget !== 300000) ? Number(parsed.budget) : 100000;
         const validBundleId = (parsed.selectedBundleId && parsed.selectedBundleId !== 'bundle-b') ? parsed.selectedBundleId : 'bundle-a';
-        
+
         if (parsed.profile) setProfileState({ ...defaultProfile, ...parsed.profile, availableBudgetINR: validBudget });
         setBudgetState(validBudget);
         setSelectedBundleIdState(validBundleId);
