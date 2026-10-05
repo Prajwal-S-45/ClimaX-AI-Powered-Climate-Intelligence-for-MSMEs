@@ -220,32 +220,36 @@ export const PassportPage: React.FC = () => {
               <div>
                 <span className="text-[11px] font-bold text-emerald-400 uppercase tracking-wider">Active Bundle Title</span>
                 <h4 className="text-base font-extrabold text-white">
-                  {activeBundle.title}
+                  {activeBundle ? activeBundle.title : 'No active bundle'}
                 </h4>
               </div>
               <div className="text-right">
                 <span className="text-[11px] text-slate-400 block">Total Investment Required</span>
                 <span className="text-lg font-extrabold text-emerald-400">
-                  {formatCurrencyINR(activeBundle.metrics.totalInvestment)}
+                  {formatCurrencyINR(activeBundle ? activeBundle.metrics.totalInvestment : 0)}
                 </span>
               </div>
             </div>
 
             <div className="space-y-2">
-              <span className="text-[11px] font-semibold text-slate-300 block">Included Interventions ({activeBundle.items.length}):</span>
+              <span className="text-[11px] font-semibold text-slate-300 block">Included Interventions ({activeBundle ? activeBundle.items.length : 0}):</span>
               <div className="grid grid-cols-1 sm:grid-cols-3 gap-2 text-xs">
-                {activeBundle.items.map((item, idx) => (
+                {activeBundle ? activeBundle.items.map((item, idx) => (
                   <div key={item.id} className="p-2.5 bg-slate-800 rounded-xl border border-slate-700">
                     <span className="font-semibold text-white block">{idx + 1}. {item.name}</span>
                     <span className="text-[11px] text-slate-400">Capex: {formatCurrencyINR(item.estimatedInvestment)}</span>
                   </div>
-                ))}
+                )) : (
+                  <div className="p-2.5 bg-slate-800 rounded-xl border border-slate-700 text-slate-400">
+                    No active bundle selected.
+                  </div>
+                )}
               </div>
             </div>
 
             <div className="flex justify-between items-center text-xs pt-1 text-slate-400">
               <span>Implementation Timeline Target: <strong className="text-white">6 Weeks</strong></span>
-              <span>Projected Payback: <strong className="text-emerald-400">{activeBundle.metrics.avgPayback} Years</strong></span>
+              <span>Projected Payback: <strong className="text-emerald-400">{activeBundle ? `${activeBundle.metrics.avgPayback} Years` : 'N/A'}</strong></span>
             </div>
           </div>
         </div>
@@ -262,15 +266,15 @@ export const PassportPage: React.FC = () => {
             <div className="p-4 bg-emerald-50/50 border border-emerald-200 rounded-2xl space-y-2.5 text-xs">
               <div className="flex justify-between items-center">
                 <span className="text-slate-600">Expected Annual Operating Savings:</span>
-                <span className="font-extrabold text-emerald-700 text-sm">{formatCurrencyINR(activeBundle.metrics.annualSavings)} / yr</span>
+                <span className="font-extrabold text-emerald-700 text-sm">{formatCurrencyINR(activeBundle ? activeBundle.metrics.annualSavings : 0)} / yr</span>
               </div>
               <div className="flex justify-between items-center">
                 <span className="text-slate-600">Estimated Payback Period:</span>
-                <span className="font-bold text-slate-900">{activeBundle.metrics.avgPayback} Years</span>
+                <span className="font-bold text-slate-900">{activeBundle ? `${activeBundle.metrics.avgPayback} Years` : 'N/A'}</span>
               </div>
               <div className="flex justify-between items-center border-t border-emerald-200/80 pt-2">
                 <span className="text-slate-700 font-semibold">5-Year Cumulative Savings:</span>
-                <span className="font-extrabold text-slate-900 text-base">{formatCurrencyINR(activeBundle.metrics.annualSavings * 5)}</span>
+                <span className="font-extrabold text-slate-900 text-base">{formatCurrencyINR(activeBundle ? activeBundle.metrics.annualSavings * 5 : 0)}</span>
               </div>
             </div>
           </div>
@@ -285,20 +289,20 @@ export const PassportPage: React.FC = () => {
             <div className="p-4 bg-teal-50/50 border border-teal-200 rounded-2xl space-y-2.5 text-xs">
               <div className="flex justify-between items-center">
                 <span className="text-slate-600">Estimated CO₂ Reduction:</span>
-                <span className="font-extrabold text-teal-700 text-sm">{activeBundle.metrics.co2Reduction} tCO₂e / year</span>
+                <span className="font-extrabold text-teal-700 text-sm">{activeBundle ? activeBundle.metrics.co2Reduction : 0} tCO₂e / year</span>
               </div>
               <div className="flex justify-between items-center">
                 <span className="text-slate-600">Estimated Water Savings:</span>
                 <span className="font-bold text-slate-900">
-                  {activeBundle.metrics.waterSavings > 0 ? `${activeBundle.metrics.waterSavings.toLocaleString()} Litres / year` : 'N/A'}
+                  {activeBundle && activeBundle.metrics.waterSavings > 0 ? `${activeBundle.metrics.waterSavings.toLocaleString()} Litres / year` : 'N/A'}
                 </span>
               </div>
               <div className="flex justify-between items-center border-t border-teal-200/80 pt-2">
                 <span className="text-slate-700 font-semibold">Risks Addressed:</span>
                 <div className="flex gap-1 flex-wrap">
-                  {activeBundle.metrics.risks.map((r) => (
+                  {activeBundle ? activeBundle.metrics.risks.map((r) => (
                     <Badge key={r} variant="teal" size="sm">{r}</Badge>
-                  ))}
+                  )) : null}
                 </div>
               </div>
             </div>
