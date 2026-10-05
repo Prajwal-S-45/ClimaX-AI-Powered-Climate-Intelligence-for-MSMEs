@@ -267,7 +267,7 @@ export const DashboardPage: React.FC = () => {
                 Selected Opportunity Snapshot
               </CardTitle>
               <CardDescription>
-                Projected impact from active bundle ({activeBundle.title})
+                Projected impact from active bundle ({activeBundle ? activeBundle.title : 'None'})
               </CardDescription>
             </CardHeader>
 
@@ -275,32 +275,34 @@ export const DashboardPage: React.FC = () => {
               <div className="p-3.5 rounded-xl bg-slate-50 border border-slate-200 space-y-1">
                 <span className="text-xs text-slate-500 font-medium">Potential Annual Savings</span>
                 <div className="text-lg font-extrabold text-slate-900">
-                  {formatCurrencyINR(activeBundle.metrics.annualSavings)} <span className="text-xs text-emerald-700 font-semibold">/ year</span>
+                  {formatCurrencyINR(activeBundle ? activeBundle.metrics.annualSavings : 0)} <span className="text-xs text-emerald-700 font-semibold">/ year</span>
                 </div>
               </div>
 
               <div className="p-3.5 rounded-xl bg-slate-50 border border-slate-200 space-y-1">
                 <span className="text-xs text-slate-500 font-medium">Potential Water Savings</span>
                 <div className="text-lg font-extrabold text-slate-900">
-                  {activeBundle.metrics.waterSavings > 0 ? `${(activeBundle.metrics.waterSavings / 1000).toFixed(0)}k Litres` : 'N/A'} <span className="text-xs text-teal-700 font-semibold">/ year</span>
+                  {activeBundle && activeBundle.metrics.waterSavings > 0 ? `${(activeBundle.metrics.waterSavings / 1000).toFixed(0)}k Litres` : 'N/A'} <span className="text-xs text-teal-700 font-semibold">/ year</span>
                 </div>
               </div>
 
               <div className="p-3.5 rounded-xl bg-slate-50 border border-slate-200 space-y-1">
                 <span className="text-xs text-slate-500 font-medium">Potential CO₂ Reduction</span>
                 <div className="text-lg font-extrabold text-slate-900">
-                  {activeBundle.metrics.co2Reduction} Tons <span className="text-xs text-emerald-700 font-semibold">/ year</span>
+                  {activeBundle ? activeBundle.metrics.co2Reduction : 0} Tons <span className="text-xs text-emerald-700 font-semibold">/ year</span>
                 </div>
               </div>
 
               <div className="p-3.5 rounded-xl bg-emerald-50/70 border border-emerald-200 space-y-1">
                 <span className="text-xs text-emerald-800 font-medium">Estimated Investment Capex</span>
                 <div className="text-lg font-extrabold text-emerald-800">
-                  {formatCurrencyINR(activeBundle.metrics.totalInvestment)}
+                  {formatCurrencyINR(activeBundle ? activeBundle.metrics.totalInvestment : 0)}
                 </div>
-                <p className="text-[11px] text-emerald-700 font-medium">
-                  Fits within your {formatCurrencyINR(budget)} available green budget!
-                </p>
+                {activeBundle && activeBundle.metrics.totalInvestment <= budget && (
+                  <p className="text-[11px] text-emerald-700 font-medium">
+                    Fits within your {formatCurrencyINR(budget)} available green budget!
+                  </p>
+                )}
               </div>
             </CardContent>
 
@@ -332,7 +334,7 @@ export const DashboardPage: React.FC = () => {
               <div className="p-3 bg-amber-50/80 border border-amber-200 rounded-xl space-y-1">
                 <div className="flex items-center gap-2 text-xs font-bold text-amber-900">
                   <Sparkles className="w-4 h-4 text-amber-700" />
-                  <span>Status: Ready for Review ({activeBundle.title})</span>
+                  <span>Status: Ready for Review ({activeBundle ? activeBundle.title : 'None'})</span>
                 </div>
                 <p className="text-xs text-amber-800">
                   Select green interventions and submit project evidence to issue a Finance-ready digital passport.
