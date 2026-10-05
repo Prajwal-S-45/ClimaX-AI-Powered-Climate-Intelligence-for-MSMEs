@@ -57,11 +57,11 @@ export const SimulatorPage: React.FC = () => {
   } = useClimate();
 
   // Active bundle dynamic metrics directly from centralized climate context
-  const initialInvestment = activeBundle.metrics.totalInvestment;
-  const annualSavings = activeBundle.metrics.annualSavings;
-  const paybackYears = activeBundle.metrics.avgPayback;
-  const annualCO2Reduction = activeBundle.metrics.co2Reduction;
-  const annualWaterSavings = activeBundle.metrics.waterSavings;
+  const initialInvestment = activeBundle?.metrics.totalInvestment ?? 0;
+  const annualSavings = activeBundle?.metrics.annualSavings ?? 0;
+  const paybackYears = activeBundle?.metrics.avgPayback ?? 0;
+  const annualCO2Reduction = activeBundle?.metrics.co2Reduction ?? 0;
+  const annualWaterSavings = activeBundle?.metrics.waterSavings ?? 0;
 
   // Before vs After comparison values
   const monthlyCostBefore = electricityCost;
@@ -261,7 +261,7 @@ export const SimulatorPage: React.FC = () => {
                 <h3 className="text-lg font-extrabold text-white">Before vs After Performance</h3>
               </div>
               <Badge variant="emerald" size="sm">
-                Active Bundle: {activeBundle.title}
+                Active Bundle: {activeBundle ? activeBundle.title : 'None'}
               </Badge>
             </div>
 
