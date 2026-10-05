@@ -1,33 +1,14 @@
-import React, { useState, useEffect } from 'react';
-import { Menu, Building2, MapPin, Bell, ShieldCheck, ChevronDown, Play, RotateCcw } from 'lucide-react';
-import { OnboardingFormData } from '../types';
+import React from 'react';
+import { Menu, Building2, MapPin, Bell, ShieldCheck, Play } from 'lucide-react';
+import { useClimate } from '../context/ClimateContext';
 
 interface HeaderProps {
   onMenuToggle: () => void;
 }
 
-const defaultHeaderProfile = {
-  businessName: 'Shakti Precision Components',
-  location: 'Bengaluru, Karnataka',
-  industry: 'Manufacturing',
-};
-
 export const Header: React.FC<HeaderProps> = ({ onMenuToggle }) => {
-  const [profile, setProfile] = useState<Partial<OnboardingFormData>>(defaultHeaderProfile);
-  const [isDemoMode, setIsDemoMode] = useState<boolean>(true);
-
-  useEffect(() => {
-    try {
-      const saved = localStorage.getItem('msme_climate_profile');
-      if (saved) {
-        const parsed = JSON.parse(saved);
-        setProfile(parsed);
-        setIsDemoMode(Boolean(parsed.isDemoMode !== false));
-      }
-    } catch (e) {
-      console.error('Error reading header profile state:', e);
-    }
-  }, []);
+  const { profile } = useClimate();
+  const isDemoMode = (profile as any).isDemoMode === true;
 
   return (
     <header className="h-16 border-b border-slate-200 bg-white sticky top-0 z-30 flex items-center justify-between px-4 lg:px-8 shadow-xs">
