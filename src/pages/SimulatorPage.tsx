@@ -53,23 +53,55 @@ export const SimulatorPage: React.FC = () => {
     setSelectedBundleId,
     bundles,
     activeBundle,
+    baselineEmissions,
     resetToDefaults,
   } = useClimate();
 
   // Active bundle dynamic metrics directly from centralized climate context
+  const hasActiveBundle = Boolean(activeBundle);
   const initialInvestment = activeBundle?.metrics.totalInvestment ?? 0;
   const annualSavings = activeBundle?.metrics.annualSavings ?? 0;
   const paybackYears = activeBundle?.metrics.avgPayback ?? 0;
   const annualCO2Reduction = activeBundle?.metrics.co2Reduction ?? 0;
   const annualWaterSavings = activeBundle?.metrics.waterSavings ?? 0;
 
-  // Before vs After comparison values
-  const monthlyCostBefore = electricityCost;
-  const monthlySavings = Math.round(annualSavings / 12);
-  const monthlyCostAfter = Math.max(10000, monthlyCostBefore - monthlySavings);
+  // Utility-specific annual & monthly savings derived ONLY from affected interventions
+  const activeItems = activeBundle?.items ?? [];
 
-  const monthlyCO2Before = 14.2;
-  const monthlyCO2After = Number(Math.max(1.0, monthlyCO2Before - annualCO2Reduction / 12).toFixed(1));
+  // Electricity-affecting interventions (Energy, Heat)
+  const electricityItems = activeItems.filter((i) => ['Energy', 'Heat'].includes(i.category));
+  const annualElecSavings = electricityItems.reduce((acc, i) => acc + i.annualSavings, 0);
+  const monthlyElecSavings = hasActiveBundle ? Math.round(annualElecSavings / 12) : 0;
+
+  // Fuel-affecting interventions (Transport, Fuel)
+  const fuelItems = activeItems.filter((i) => ['Transport', 'Fuel'].includes(i.category));
+  const annualFuelSavings = fuelItems.reduce((acc, i) => acc + i.annualSavings, 0);
+  const monthlyFuelSavings = hasActiveBundle ? Math.round(annualFuelSavings / 12) : 0;
+
+  // Water-affecting interventions (Water)
+  const waterItems = activeItems.filter((i) => i.category === 'Water');
+  const annualWaterSavingsFromItems = waterItems.reduce((acc, i) => acc + i.annualSavings, 0);
+  const monthlyWaterSavingsCost = hasActiveBundle ? Math.round(annualWaterSavingsFromItems / 12) : 0;
+
+  // Monthly utility baseline & optimized values (reducing ONLY utilities affected by interventions)
+  const monthlyElecBefore = electricityCost;
+  const monthlyFuelBefore = 22000;
+  const monthlyWaterBefore = 13000;
+
+  const monthlyElecAfter = Math.max(0, monthlyElecBefore - monthlyElecSavings);
+  const monthlyFuelAfter = Math.max(0, monthlyFuelBefore - monthlyFuelSavings);
+  const monthlyWaterAfter = Math.max(0, monthlyWaterBefore - monthlyWaterSavingsCost);
+
+  // Before vs After comparison values for active bundle summary card
+  const monthlyCostBefore = monthlyElecBefore;
+  const monthlySavings = monthlyElecSavings;
+  const monthlyCostAfter = monthlyElecAfter;
+
+  // Monthly emissions baseline derived dynamically from centralized ClimateContext
+  const monthlyCO2Before = baselineEmissions?.monthlyTotalCO2 ?? 14.2;
+  const monthlyCO2After = hasActiveBundle
+    ? Number(Math.max(0, monthlyCO2Before - annualCO2Reduction / 12).toFixed(1))
+    : monthlyCO2Before;
 
   // 5-Year Cumulative Cash Flow Data
   const cumulativeCashFlowData = [
@@ -81,22 +113,22 @@ export const SimulatorPage: React.FC = () => {
     { year: 'Year 5', netCashFlow: Math.round(-initialInvestment + annualSavings * 5.5), cumulativeSavings: Math.round(annualSavings * 5.5) },
   ];
 
-  // Before vs After Utility Comparison Data
+  // Before vs After Utility Comparison Data (allocates reductions ONLY to utilities affected by selected interventions)
   const beforeAfterCostData = [
-    { category: 'Monthly Electricity', baseline: monthlyCostBefore, optimized: monthlyCostAfter },
-    { category: 'Monthly Fuel', baseline: 22000, optimized: 14000 },
-    { category: 'Monthly Water', baseline: 13000, optimized: Math.max(5000, 13000 - (annualWaterSavings / 12) * 0.08) },
+    { category: 'Monthly Electricity', baseline: monthlyElecBefore, optimized: monthlyElecAfter },
+    { category: 'Monthly Fuel', baseline: monthlyFuelBefore, optimized: monthlyFuelAfter },
+    { category: 'Monthly Water', baseline: monthlyWaterBefore, optimized: monthlyWaterAfter },
   ];
 
-  // Emissions Trajectory Data (Strictly capped against baseline 170.4 tCO2e/yr)
-  const baselineAnnualCO2 = 170.4;
+  // Emissions Trajectory Data (Derived dynamically from baselineEmissions)
+  const baselineAnnualCO2 = baselineEmissions?.annualTotalCO2 ?? 170.4;
   const emissionsTrajectoryData = [
     { year: 'Baseline', baselineCO2: baselineAnnualCO2, optimizedCO2: baselineAnnualCO2 },
-    { year: 'Year 1', baselineCO2: baselineAnnualCO2, optimizedCO2: Number((baselineAnnualCO2 - annualCO2Reduction).toFixed(1)) },
-    { year: 'Year 2', baselineCO2: baselineAnnualCO2, optimizedCO2: Number((baselineAnnualCO2 - annualCO2Reduction * 1.1).toFixed(1)) },
-    { year: 'Year 3', baselineCO2: baselineAnnualCO2, optimizedCO2: Number((baselineAnnualCO2 - annualCO2Reduction * 1.2).toFixed(1)) },
-    { year: 'Year 4', baselineCO2: baselineAnnualCO2, optimizedCO2: Number((baselineAnnualCO2 - annualCO2Reduction * 1.25).toFixed(1)) },
-    { year: 'Year 5', baselineCO2: baselineAnnualCO2, optimizedCO2: Number((baselineAnnualCO2 - annualCO2Reduction * 1.3).toFixed(1)) },
+    { year: 'Year 1', baselineCO2: baselineAnnualCO2, optimizedCO2: hasActiveBundle ? Number(Math.max(0, baselineAnnualCO2 - annualCO2Reduction).toFixed(1)) : baselineAnnualCO2 },
+    { year: 'Year 2', baselineCO2: baselineAnnualCO2, optimizedCO2: hasActiveBundle ? Number(Math.max(0, baselineAnnualCO2 - annualCO2Reduction * 1.1).toFixed(1)) : baselineAnnualCO2 },
+    { year: 'Year 3', baselineCO2: baselineAnnualCO2, optimizedCO2: hasActiveBundle ? Number(Math.max(0, baselineAnnualCO2 - annualCO2Reduction * 1.2).toFixed(1)) : baselineAnnualCO2 },
+    { year: 'Year 4', baselineCO2: baselineAnnualCO2, optimizedCO2: hasActiveBundle ? Number(Math.max(0, baselineAnnualCO2 - annualCO2Reduction * 1.25).toFixed(1)) : baselineAnnualCO2 },
+    { year: 'Year 5', baselineCO2: baselineAnnualCO2, optimizedCO2: hasActiveBundle ? Number(Math.max(0, baselineAnnualCO2 - annualCO2Reduction * 1.3).toFixed(1)) : baselineAnnualCO2 },
   ];
 
   return (
@@ -197,10 +229,16 @@ export const SimulatorPage: React.FC = () => {
               <Select
                 label="4. Selected Intervention Bundle"
                 value={selectedBundleId}
-                onChange={(e) => setSelectedBundleId(e.target.value)}
+                onChange={(e) => {
+                  const chosen = bundles.find((b) => b.id === e.target.value);
+                  if (chosen && chosen.isFeasible) {
+                    setSelectedBundleId(chosen.id);
+                  }
+                }}
                 options={bundles.map((b) => ({
                   value: b.id,
-                  label: `${b.title} (${formatCurrencyINR(b.metrics.totalInvestment)})`,
+                  label: `${b.title} (${formatCurrencyINR(b.metrics.totalInvestment)})${!b.isFeasible ? ' - Over Budget' : ''}`,
+                  disabled: !b.isFeasible,
                 }))}
               />
             </div>
@@ -225,29 +263,29 @@ export const SimulatorPage: React.FC = () => {
           <div className="grid grid-cols-2 sm:grid-cols-4 gap-4">
             <MetricCard
               title="Initial Investment"
-              value={formatCurrencyINR(initialInvestment)}
-              subtitle="Selected bundle capex"
+              value={hasActiveBundle ? formatCurrencyINR(initialInvestment) : 'N/A'}
+              subtitle={hasActiveBundle ? "Selected bundle capex" : "No bundle selected"}
               accentColor="navy"
               icon={<DollarSign className="w-4 h-4" />}
             />
             <MetricCard
               title="Annual Savings"
-              value={formatCurrencyINR(annualSavings)}
-              subtitle="Utility reduction"
+              value={hasActiveBundle ? formatCurrencyINR(annualSavings) : 'N/A'}
+              subtitle={hasActiveBundle ? "Utility reduction" : "No active savings"}
               accentColor="emerald"
               icon={<TrendingUp className="w-4 h-4" />}
             />
             <MetricCard
               title="Payback Period"
-              value={`${paybackYears} Yrs`}
+              value={hasActiveBundle ? `${paybackYears} Yrs` : 'N/A'}
               subtitle={`Target ≤ ${profile.maxPaybackPeriodYears || 4} yrs`}
               accentColor="amber"
               icon={<CheckCircle2 className="w-4 h-4" />}
             />
             <MetricCard
               title="CO₂ Avoidance"
-              value={`${annualCO2Reduction} t/yr`}
-              subtitle="Scope 1 & 2 offset"
+              value={hasActiveBundle ? `${annualCO2Reduction} t/yr` : 'N/A'}
+              subtitle={hasActiveBundle ? "Scope 1 & 2 offset" : "No carbon reduction"}
               accentColor="teal"
               icon={<ShieldCheck className="w-4 h-4" />}
             />
@@ -260,8 +298,8 @@ export const SimulatorPage: React.FC = () => {
                 <ArrowRightLeft className="w-5 h-5 text-emerald-400" />
                 <h3 className="text-lg font-extrabold text-white">Before vs After Performance</h3>
               </div>
-              <Badge variant="emerald" size="sm">
-                Active Bundle: {activeBundle ? activeBundle.title : 'None'}
+              <Badge variant={hasActiveBundle ? "emerald" : "amber"} size="sm">
+                Active Bundle: {activeBundle ? activeBundle.title : 'None Selected'}
               </Badge>
             </div>
 
@@ -273,14 +311,14 @@ export const SimulatorPage: React.FC = () => {
                   <span className="text-emerald-400 font-extrabold text-base">{formatCurrencyINR(monthlyCostAfter)}</span>
                 </div>
                 <span className="text-[11px] text-emerald-300 font-semibold block">
-                  Save {formatCurrencyINR(monthlySavings)} / mo
+                  {hasActiveBundle ? `Save ${formatCurrencyINR(monthlySavings)} / mo` : 'No bundle selected'}
                 </span>
               </div>
 
               <div className="p-3.5 bg-slate-800/90 rounded-2xl border border-slate-700 space-y-1">
                 <span className="text-slate-400 font-semibold block">Annual Operating Savings</span>
                 <div className="text-lg font-extrabold text-emerald-400 pt-0.5">
-                  {formatCurrencyINR(annualSavings)} <span className="text-xs text-slate-300 font-normal">/ yr</span>
+                  {hasActiveBundle ? `${formatCurrencyINR(annualSavings)} / yr` : 'N/A'}
                 </div>
                 <span className="text-[11px] text-slate-300 block">Operating margin boost</span>
               </div>
@@ -288,7 +326,7 @@ export const SimulatorPage: React.FC = () => {
               <div className="p-3.5 bg-slate-800/90 rounded-2xl border border-slate-700 space-y-1">
                 <span className="text-slate-400 font-semibold block">Payback Period</span>
                 <div className="text-lg font-extrabold text-amber-400 pt-0.5">
-                  {paybackYears} Years
+                  {hasActiveBundle ? `${paybackYears} Years` : 'N/A'}
                 </div>
                 <span className="text-[11px] text-emerald-300 font-semibold block">
                   Fits &le; {profile.maxPaybackPeriodYears || 4} yr target
@@ -302,7 +340,7 @@ export const SimulatorPage: React.FC = () => {
                   <span className="text-teal-400 font-extrabold text-base">{monthlyCO2After} tCO₂e</span>
                 </div>
                 <span className="text-[11px] text-teal-300 font-semibold block">
-                  -{annualCO2Reduction} tCO₂e / year
+                  {hasActiveBundle ? `-${annualCO2Reduction} tCO₂e / year` : 'No carbon reduction'}
                 </span>
               </div>
             </div>

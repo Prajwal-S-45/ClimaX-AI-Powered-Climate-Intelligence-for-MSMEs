@@ -157,16 +157,30 @@ export const interventionDatabase: InterventionItem[] = [
   },
 ];
 
+// Helper to parse numeric cost inputs while preserving valid zero values
+const parseCost = (val: number | '' | undefined | null, fallback: number): number => {
+  if (val === '' || val === undefined || val === null) return fallback;
+  const num = Number(val);
+  return !isNaN(num) && num >= 0 ? num : fallback;
+};
+
 // Central Baseline Emissions Calculation Model
 export const getBaselineEmissions = (profileData: OnboardingFormData = defaultProfile) => {
-  const electricityCost = Number(profileData.monthlyElectricityBillINR) || 78000;
-  const fuelExpense = Number(profileData.monthlyFuelExpenseINR) || 22000;
+  const electricityCost = parseCost(profileData.monthlyElectricityBillINR, 78000);
+  const fuelExpense = parseCost(profileData.monthlyFuelExpenseINR, 22000);
 
   // Scope 2 (Electricity): ~8,210 kWh/mo * 0.82 kg CO2/kWh = 6.73 tCO2e/mo
   const monthlyScope2 = Number(((electricityCost / 9.5) * 0.82 / 1000).toFixed(2));
 
-  // Scope 1 (Diesel Fuel): ~231 L/mo * 2.68 kg CO2/L = 0.62 tCO2e/mo + direct process
-  const monthlyScope1 = Number(((fuelExpense / 95) * 2.68 / 1000 + 6.85).toFixed(2)); // Total 14.2 tCO2e/mo Scope 1 & 2 baseline
+  // Scope 1 process emissions: applicable to manufacturing/industrial process profiles or demo default
+  const isManufacturingProcess =
+    !profileData.industry ||
+    profileData.industry.toLowerCase().includes('manufacturing') ||
+    profileData.industry.toLowerCase().includes('industrial');
+  const processEmissions = isManufacturingProcess ? 6.85 : 0;
+
+  // Scope 1 (Diesel Fuel + Direct Process): fuel offset + process emissions
+  const monthlyScope1 = Number(((fuelExpense / 95) * 2.68 / 1000 + processEmissions).toFixed(2)); // 14.2 tCO2e/mo total for default profile
 
   const monthlyTotalCO2 = Number((monthlyScope1 + monthlyScope2).toFixed(1)); // 14.2 tCO2e/mo
   const annualTotalCO2 = Number((monthlyTotalCO2 * 12).toFixed(1)); // 170.4 tCO2e/yr
@@ -180,11 +194,34 @@ export const getBaselineEmissions = (profileData: OnboardingFormData = defaultPr
 };
 
 export const getBundlesForBudget = (currentBudget: number): InterventionBundle[] => {
-  // Bundle A: Energy Efficiency Starter
-  const bundleAItems = [
-    interventionDatabase.find((i) => i.id === 'led-retrofit')!,
-    interventionDatabase.find((i) => i.id === 'cool-roof')!,
-  ];
+  // Bundle A: Dynamic Starter Plan based on budget tier (enables feasible option for micro-budgets like ₹25,000)
+  let bundleAItems: InterventionItem[];
+  let bundleATitle: string;
+  let bundleASubtitle: string;
+  let bundleATag: string;
+
+  if (currentBudget < 65000) {
+    // Micro-budget tier (< ₹65k, e.g. ₹25,000)
+    bundleAItems = [interventionDatabase.find((i) => i.id === 'water-fixtures')!];
+    bundleATitle = 'Water Efficiency Starter';
+    bundleASubtitle = 'Ultra-low capex water conservation and utility reduction';
+    bundleATag = 'Micro Investment';
+  } else if (currentBudget < 100000) {
+    // Single quick win tier (₹65k - ₹99k)
+    bundleAItems = [interventionDatabase.find((i) => i.id === 'led-retrofit')!];
+    bundleATitle = 'Energy Efficiency Starter';
+    bundleASubtitle = 'Fast payback LED lighting retrofit & smart controls';
+    bundleATag = 'Quick Payback';
+  } else {
+    // Standard Starter Plan (>= ₹1,00,000)
+    bundleAItems = [
+      interventionDatabase.find((i) => i.id === 'led-retrofit')!,
+      interventionDatabase.find((i) => i.id === 'cool-roof')!,
+    ];
+    bundleATitle = 'Energy Efficiency Starter';
+    bundleASubtitle = 'Fast payback, low risk operational quick-wins';
+    bundleATag = 'Quick Payback';
+  }
 
   // Bundle B: Balanced Climate Plan
   const bundleBItems = [
@@ -233,13 +270,7 @@ export const getBundlesForBudget = (currentBudget: number): InterventionBundle[]
   };
 
   return [
-    buildBundle(
-      'bundle-a',
-      'Energy Efficiency Starter',
-      'Fast payback, low risk operational quick-wins',
-      bundleAItems,
-      'Quick Payback'
-    ),
+    buildBundle('bundle-a', bundleATitle, bundleASubtitle, bundleAItems, bundleATag),
     buildBundle(
       'bundle-b',
       'Balanced Climate Plan',

@@ -1,4 +1,5 @@
 import React, { useState } from 'react';
+import { QRCodeSVG } from 'qrcode.react';
 import {
   FileCheck2,
   Share2,
@@ -23,7 +24,9 @@ export const PassportPage: React.FC = () => {
   const [copied, setCopied] = useState<boolean>(false);
 
   const passportId = 'CAP-2026-0001';
-  const passportUrl = `${window.location.origin}/verify/${passportId}`;
+  const bundleId = activeBundle?.id || 'bundle-a';
+  const targetBudget = activeBundle?.metrics?.totalInvestment || 100000;
+  const passportUrl = `${window.location.origin}/verify/${passportId}?bundle=${bundleId}&budget=${targetBudget}`;
 
   const handlePrint = () => {
     window.print();
@@ -146,7 +149,14 @@ export const PassportPage: React.FC = () => {
 
           {/* QR Code & Passport Identifier Metadata Block */}
           <div className="p-4 bg-white border border-slate-200 rounded-2xl shadow-xs flex flex-col items-center justify-center space-y-2 border-dashed">
-            <QrCode className="w-16 h-16 text-slate-900" />
+            <QRCodeSVG
+              value={passportUrl}
+              size={64}
+              bgColor="#ffffff"
+              fgColor="#0f172a"
+              level="M"
+              className="w-16 h-16"
+            />
             <div className="text-center">
               <span className="text-[10px] font-semibold text-slate-400 uppercase tracking-widest block">Passport ID</span>
               <span className="text-xs font-mono font-extrabold text-emerald-700">CAP-2026-0001</span>
@@ -248,7 +258,7 @@ export const PassportPage: React.FC = () => {
             </div>
 
             <div className="flex justify-between items-center text-xs pt-1 text-slate-400">
-              <span>Implementation Timeline Target: <strong className="text-white">6 Weeks</strong></span>
+              <span>Implementation Timeline Target: <strong className="text-white">6 Weeks (Installation Only)</strong></span>
               <span>Projected Payback: <strong className="text-emerald-400">{activeBundle ? `${activeBundle.metrics.avgPayback} Years` : 'N/A'}</strong></span>
             </div>
           </div>

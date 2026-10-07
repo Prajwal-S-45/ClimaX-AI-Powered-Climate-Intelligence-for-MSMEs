@@ -1,5 +1,6 @@
 import React from 'react';
-import { useParams, Link } from 'react-router-dom';
+import { useParams, useSearchParams, Link } from 'react-router-dom';
+import { QRCodeSVG } from 'qrcode.react';
 import {
   ShieldCheck,
   ShieldAlert,
@@ -20,13 +21,24 @@ import { formatCurrencyINR } from '../utils/helpers';
 
 export const VerificationPage: React.FC = () => {
   const { passportId } = useParams<{ passportId: string }>();
+  const [searchParams] = useSearchParams();
+  const bundleParam = searchParams.get('bundle');
+  const budgetParam = searchParams.get('budget');
 
   // Valid passport ID check (case insensitive)
   const isValidPassport = passportId?.toUpperCase() === 'CAP-2026-0001';
 
-  // Demo values for standalone verification without requiring localStorage or previous session state
+  // Demo values for standalone verification matching encoded passport URL identity
   const demoProfile = defaultProfile;
-  const demoBundle = getBundlesForBudget(100000)[0]; // Energy Efficiency Starter
+  const targetBudget = budgetParam && !isNaN(Number(budgetParam)) ? Number(budgetParam) : 100000;
+  const allBundles = getBundlesForBudget(targetBudget);
+  const demoBundle =
+    (bundleParam ? allBundles.find((b) => b.id === bundleParam) : null) ||
+    allBundles.find((b) => b.id === 'bundle-a') ||
+    allBundles[0] ||
+    null;
+
+  const verificationUrl = `${window.location.origin}/verify/${passportId}${window.location.search}`;
 
   if (!isValidPassport) {
     return (
@@ -69,6 +81,38 @@ export const VerificationPage: React.FC = () => {
     );
   }
 
+  if (!demoBundle) {
+    return (
+      <div className="max-w-2xl mx-auto py-16 px-4 space-y-6 text-center">
+        <Card className="p-8 md:p-12 space-y-6 border-2 border-amber-200 bg-white shadow-xl rounded-3xl">
+          <div className="w-16 h-16 rounded-2xl bg-amber-50 border border-amber-200 text-amber-600 flex items-center justify-center mx-auto">
+            <ShieldAlert className="w-9 h-9" />
+          </div>
+
+          <div className="space-y-2">
+            <Badge variant="amber" size="md">
+              Verification Data Error
+            </Badge>
+            <h1 className="text-2xl md:text-3xl font-extrabold text-slate-900 tracking-tight">
+              Project Record Unavailable
+            </h1>
+            <p className="text-sm text-slate-600 max-w-md mx-auto leading-relaxed">
+              The target decarbonization project bundle could not be found or loaded.
+            </p>
+          </div>
+
+          <div className="pt-2">
+            <Link to="/">
+              <Button variant="primary" size="md" leftIcon={<ArrowLeft className="w-4 h-4" />}>
+                Return to Home Page
+              </Button>
+            </Link>
+          </div>
+        </Card>
+      </div>
+    );
+  }
+
   return (
     <div className="max-w-4xl mx-auto space-y-6 py-4 px-2 sm:px-4">
       {/* Top Banner Notice */}
@@ -80,7 +124,7 @@ export const VerificationPage: React.FC = () => {
           <div>
             <div className="flex items-center gap-2">
               <span className="text-xs font-bold text-emerald-400 uppercase tracking-widest">Public Verification Ledger</span>
-              <Badge variant="emerald" size="sm">Authentic & Active</Badge>
+              <Badge variant="emerald" size="sm">Demo – Ready for Review</Badge>
             </div>
             <h1 className="text-base font-bold text-white">
               Official Climate Action Passport Certificate
@@ -105,7 +149,7 @@ export const VerificationPage: React.FC = () => {
           <div className="space-y-3">
             <div className="flex items-center gap-2 flex-wrap">
               <Badge variant="emerald" size="md" icon={<Award className="w-4 h-4 text-emerald-600" />}>
-                VERIFIED CLIMATE ACTION PASSPORT
+                DEMO – READY FOR REVIEW
               </Badge>
               <Badge variant="purple" size="sm">
                 Status: Ready for Review
@@ -136,7 +180,14 @@ export const VerificationPage: React.FC = () => {
 
           {/* QR & ID Block */}
           <div className="p-4 bg-white border border-slate-200 rounded-2xl shadow-xs flex flex-col items-center justify-center space-y-2 border-dashed">
-            <QrCode className="w-16 h-16 text-slate-900" />
+            <QRCodeSVG
+              value={verificationUrl}
+              size={64}
+              bgColor="#ffffff"
+              fgColor="#0f172a"
+              level="M"
+              className="w-16 h-16"
+            />
             <div className="text-center">
               <span className="text-[10px] font-semibold text-slate-400 uppercase tracking-widest block">Verified Passport ID</span>
               <span className="text-xs font-mono font-extrabold text-emerald-700">CAP-2026-0001</span>
@@ -207,7 +258,7 @@ export const VerificationPage: React.FC = () => {
             </div>
 
             <div className="flex justify-between items-center text-xs pt-1 text-slate-400">
-              <span>Implementation Target: <strong className="text-white">6 Weeks</strong></span>
+              <span>Implementation Target: <strong className="text-white">6 Weeks (Installation Only)</strong></span>
               <span>Projected Payback: <strong className="text-emerald-400">{demoBundle.metrics.avgPayback} Years</strong></span>
             </div>
           </div>

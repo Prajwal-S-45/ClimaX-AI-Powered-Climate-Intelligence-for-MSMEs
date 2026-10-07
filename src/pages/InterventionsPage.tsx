@@ -23,50 +23,35 @@ import { useClimate } from '../context/ClimateContext';
 import { interventionDatabase, InterventionItem } from '../utils/climateEngine';
 import { formatCurrencyINR } from '../utils/helpers';
 
-// Piecewise mapping helper functions for budget slider milestones:
-// Milestone 0: 0% (pos 0)   -> ₹1,00,000
-// Milestone 1: 33% (pos 100) -> ₹3,00,000
-// Milestone 2: 67% (pos 200) -> ₹5,00,000
-// Milestone 3: 100% (pos 300)-> ₹10,00,000
+// Piecewise 1:1 discrete mapping helper functions for budget slider milestones:
+// Segment 1 (pos 0 -> 20):  ₹1,00,000 -> ₹3,00,000 (20 steps of ₹10,000)
+// Segment 2 (pos 20 -> 40): ₹3,00,000 -> ₹5,00,000 (20 steps of ₹10,000)
+// Segment 3 (pos 40 -> 60): ₹5,00,000 -> ₹10,00,000 (20 steps of ₹25,000)
 
 const budgetToSliderPosition = (val: number): number => {
   if (val <= 100000) return 0;
   if (val <= 300000) {
-    return ((val - 100000) / (300000 - 100000)) * 100;
+    return Math.round((val - 100000) / 10000);
   }
   if (val <= 500000) {
-    return 100 + ((val - 300000) / (500000 - 300000)) * 100;
+    return 20 + Math.round((val - 300000) / 10000);
   }
   if (val <= 1000000) {
-    return 200 + ((val - 500000) / (1000000 - 500000)) * 100;
+    return 40 + Math.round((val - 500000) / 25000);
   }
-  return 300;
+  return 60;
 };
 
 const sliderPositionToBudget = (pos: number): number => {
-  if (pos <= 0) return 100000;
-  if (pos >= 300) return 1000000;
-
-  // Snap exactly to milestone values if close
-  if (Math.abs(pos - 0) < 0.5) return 100000;
-  if (Math.abs(pos - 100) < 0.5) return 300000;
-  if (Math.abs(pos - 200) < 0.5) return 500000;
-  if (Math.abs(pos - 300) < 0.5) return 1000000;
-
-  let rawBudget = 100000;
-  if (pos <= 100) {
-    const ratio = pos / 100;
-    rawBudget = 100000 + ratio * (300000 - 100000);
-  } else if (pos <= 200) {
-    const ratio = (pos - 100) / 100;
-    rawBudget = 300000 + ratio * (500000 - 300000);
-  } else {
-    const ratio = (pos - 200) / 100;
-    rawBudget = 500000 + ratio * (1000000 - 500000);
+  const p = Math.max(0, Math.min(60, Math.round(pos)));
+  if (p <= 0) return 100000;
+  if (p <= 20) {
+    return 100000 + p * 10000;
   }
-
-  // Round to nearest 5,000 step for clean budget increments
-  return Math.round(rawBudget / 5000) * 5000;
+  if (p <= 40) {
+    return 300000 + (p - 20) * 10000;
+  }
+  return 500000 + (p - 40) * 25000;
 };
 
 export const InterventionsPage: React.FC = () => {
@@ -160,7 +145,7 @@ export const InterventionsPage: React.FC = () => {
           <input
             type="range"
             min={0}
-            max={300}
+            max={60}
             step={1}
             value={budgetToSliderPosition(budget)}
             onChange={(e) => setBudget(sliderPositionToBudget(Number(e.target.value)))}
