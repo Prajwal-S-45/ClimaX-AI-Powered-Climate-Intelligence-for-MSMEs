@@ -24,34 +24,41 @@ import { interventionDatabase, InterventionItem } from '../utils/climateEngine';
 import { formatCurrencyINR } from '../utils/helpers';
 
 // Piecewise 1:1 discrete mapping helper functions for budget slider milestones:
-// Segment 1 (pos 0 -> 20):  ₹1,00,000 -> ₹3,00,000 (20 steps of ₹10,000)
-// Segment 2 (pos 20 -> 40): ₹3,00,000 -> ₹5,00,000 (20 steps of ₹10,000)
-// Segment 3 (pos 40 -> 60): ₹5,00,000 -> ₹10,00,000 (20 steps of ₹25,000)
+// Segment 0 (pos 0 -> 15):  ₹25,000 -> ₹1,00,000 (15 steps of ₹5,000)
+// Segment 1 (pos 15 -> 35): ₹1,00,000 -> ₹3,00,000 (20 steps of ₹10,000)
+// Segment 2 (pos 35 -> 55): ₹3,00,000 -> ₹5,00,000 (20 steps of ₹10,000)
+// Segment 3 (pos 55 -> 75): ₹5,00,000 -> ₹10,00,000 (20 steps of ₹25,000)
 
 const budgetToSliderPosition = (val: number): number => {
-  if (val <= 100000) return 0;
+  if (val <= 25000) return 0;
+  if (val <= 100000) {
+    return Math.round((val - 25000) / 5000);
+  }
   if (val <= 300000) {
-    return Math.round((val - 100000) / 10000);
+    return 15 + Math.round((val - 100000) / 10000);
   }
   if (val <= 500000) {
-    return 20 + Math.round((val - 300000) / 10000);
+    return 35 + Math.round((val - 300000) / 10000);
   }
   if (val <= 1000000) {
-    return 40 + Math.round((val - 500000) / 25000);
+    return 55 + Math.round((val - 500000) / 25000);
   }
-  return 60;
+  return 75;
 };
 
 const sliderPositionToBudget = (pos: number): number => {
-  const p = Math.max(0, Math.min(60, Math.round(pos)));
-  if (p <= 0) return 100000;
-  if (p <= 20) {
-    return 100000 + p * 10000;
+  const p = Math.max(0, Math.min(75, Math.round(pos)));
+  if (p <= 0) return 25000;
+  if (p <= 15) {
+    return 25000 + p * 5000;
   }
-  if (p <= 40) {
-    return 300000 + (p - 20) * 10000;
+  if (p <= 35) {
+    return 100000 + (p - 15) * 10000;
   }
-  return 500000 + (p - 40) * 25000;
+  if (p <= 55) {
+    return 300000 + (p - 35) * 10000;
+  }
+  return 500000 + (p - 55) * 25000;
 };
 
 export const InterventionsPage: React.FC = () => {
@@ -145,28 +152,51 @@ export const InterventionsPage: React.FC = () => {
           <input
             type="range"
             min={0}
-            max={60}
+            max={75}
             step={1}
             value={budgetToSliderPosition(budget)}
             onChange={(e) => setBudget(sliderPositionToBudget(Number(e.target.value)))}
-            aria-label="Available capital budget in INR"
             aria-labelledby="budget-slider-label"
+            aria-valuetext={formatCurrencyINR(budget)}
             className="w-full h-2 bg-slate-700 rounded-lg appearance-none cursor-pointer accent-emerald-500"
           />
 
-          <div className="flex justify-between text-[11px] text-slate-400 font-mono">
-            <span onClick={() => setBudget(100000)} className="cursor-pointer hover:text-emerald-400 transition-colors">
+          <div className="flex justify-between text-[11px] text-slate-400 font-mono flex-wrap gap-2">
+            <button
+              type="button"
+              onClick={() => setBudget(25000)}
+              className="cursor-pointer hover:text-emerald-400 transition-colors bg-transparent border-0 p-0 font-mono text-[11px] text-slate-400 focus:outline-none focus:text-emerald-400"
+            >
+              ₹25,000 (Low Tier)
+            </button>
+            <button
+              type="button"
+              onClick={() => setBudget(100000)}
+              className="cursor-pointer hover:text-emerald-400 transition-colors bg-transparent border-0 p-0 font-mono text-[11px] text-slate-400 focus:outline-none focus:text-emerald-400"
+            >
               ₹1,00,000 (Starter)
-            </span>
-            <span onClick={() => setBudget(300000)} className="cursor-pointer hover:text-emerald-400 transition-colors">
+            </button>
+            <button
+              type="button"
+              onClick={() => setBudget(300000)}
+              className="cursor-pointer hover:text-emerald-400 transition-colors bg-transparent border-0 p-0 font-mono text-[11px] text-slate-400 focus:outline-none focus:text-emerald-400"
+            >
               ₹3,00,000 (Profile Default)
-            </span>
-            <span onClick={() => setBudget(500000)} className="cursor-pointer hover:text-emerald-400 transition-colors">
+            </button>
+            <button
+              type="button"
+              onClick={() => setBudget(500000)}
+              className="cursor-pointer hover:text-emerald-400 transition-colors bg-transparent border-0 p-0 font-mono text-[11px] text-slate-400 focus:outline-none focus:text-emerald-400"
+            >
               ₹5,00,000
-            </span>
-            <span onClick={() => setBudget(1000000)} className="cursor-pointer hover:text-emerald-400 transition-colors">
+            </button>
+            <button
+              type="button"
+              onClick={() => setBudget(1000000)}
+              className="cursor-pointer hover:text-emerald-400 transition-colors bg-transparent border-0 p-0 font-mono text-[11px] text-slate-400 focus:outline-none focus:text-emerald-400"
+            >
               ₹10,00,000 (Max)
-            </span>
+            </button>
           </div>
         </div>
       </Card>
