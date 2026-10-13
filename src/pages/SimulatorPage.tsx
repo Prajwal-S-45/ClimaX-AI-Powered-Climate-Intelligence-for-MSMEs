@@ -57,12 +57,17 @@ export const SimulatorPage: React.FC = () => {
     resetToDefaults,
   } = useClimate();
 
+  // Emissions baseline derived dynamically from centralized ClimateContext (used by trajectory)
+  const baselineAnnualCO2 = baselineEmissions?.annualTotalCO2 ?? 170.4;
+
   // Active bundle dynamic metrics directly from centralized climate context
   const hasActiveBundle = Boolean(activeBundle);
   const initialInvestment = activeBundle?.metrics.totalInvestment ?? 0;
   const annualSavings = activeBundle?.metrics.annualSavings ?? 0;
   const paybackYears = activeBundle?.metrics.avgPayback ?? 0;
-  const annualCO2Reduction = activeBundle?.metrics.co2Reduction ?? 0;
+  const annualCO2Reduction = activeBundle
+    ? Math.min(activeBundle.metrics.co2Reduction ?? 0, baselineAnnualCO2)
+    : 0;
   const annualWaterSavings = activeBundle?.metrics.waterSavings ?? 0;
 
   // Utility-specific annual & monthly savings derived ONLY from affected interventions
@@ -85,7 +90,9 @@ export const SimulatorPage: React.FC = () => {
 
   // Monthly utility baseline & optimized values (reducing ONLY utilities affected by interventions)
   const monthlyElecBefore = electricityCost;
-  const monthlyFuelBefore = 22000;
+  const monthlyFuelBefore = (profile.monthlyFuelExpenseINR && Number.isFinite(Number(profile.monthlyFuelExpenseINR)) && Number(profile.monthlyFuelExpenseINR) >= 0)
+    ? Number(profile.monthlyFuelExpenseINR)
+    : 22000;
   const monthlyWaterBefore = 13000;
 
   const monthlyElecAfter = Math.max(0, monthlyElecBefore - monthlyElecSavings);
@@ -121,7 +128,6 @@ export const SimulatorPage: React.FC = () => {
   ];
 
   // Emissions Trajectory Data (Derived dynamically from baselineEmissions)
-  const baselineAnnualCO2 = baselineEmissions?.annualTotalCO2 ?? 170.4;
   const emissionsTrajectoryData = [
     { year: 'Baseline', baselineCO2: baselineAnnualCO2, optimizedCO2: baselineAnnualCO2 },
     { year: 'Year 1', baselineCO2: baselineAnnualCO2, optimizedCO2: hasActiveBundle ? Number(Math.max(0, baselineAnnualCO2 - annualCO2Reduction).toFixed(1)) : baselineAnnualCO2 },
@@ -184,12 +190,12 @@ export const SimulatorPage: React.FC = () => {
               <Slider
                 label="1. Available Investment Budget (INR)"
                 value={budget}
-                min={100000}
+                min={25000}
                 max={1000000}
                 step={25000}
                 onChange={(val) => setBudget(val)}
                 valueFormat={(val) => formatCurrencyINR(val)}
-                minLabel="₹1L"
+                minLabel="₹25k"
                 maxLabel="₹10L"
               />
             </div>
