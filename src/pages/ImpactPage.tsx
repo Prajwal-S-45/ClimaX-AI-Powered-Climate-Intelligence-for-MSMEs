@@ -107,14 +107,21 @@ export const ImpactPage: React.FC = () => {
   // Sync evidenceList across open tabs when updated in another tab
   useEffect(() => {
     const handleStorageChange = (e: StorageEvent) => {
-      if (e.key === EVIDENCE_STORAGE_KEY && e.newValue) {
+      if (e.key === EVIDENCE_STORAGE_KEY || e.key === null) {
+        if (!e.newValue) {
+          setEvidenceList(initialEvidenceList);
+          return;
+        }
         try {
           const parsed = JSON.parse(e.newValue);
-          if (Array.isArray(parsed)) {
+          if (Array.isArray(parsed) && parsed.length > 0) {
             setEvidenceList(parsed);
+          } else {
+            setEvidenceList(initialEvidenceList);
           }
         } catch (err) {
           console.error('Error parsing evidence list from storage event:', err);
+          setEvidenceList(initialEvidenceList);
         }
       }
     };
@@ -202,7 +209,7 @@ export const ImpactPage: React.FC = () => {
     }
 
     const newItem: EvidenceItem = {
-      id: `ev-${Date.now()}`,
+      id: `ev-${Date.now()}-${Math.random().toString(36).substring(2, 6)}`,
       name: `${selectedCategory.toUpperCase()} Evidence`,
       category: selectedCategory,
       fileName: trimmedFileName,
@@ -211,13 +218,56 @@ export const ImpactPage: React.FC = () => {
       fileSize: '1.5 MB',
     };
 
-    const updatedList = [newItem, ...currentList.filter((item) => item.id !== newItem.id)];
-    try {
+    const executeSave = async () => {
+      // Re-read storage inside coordination boundary to merge any concurrent additions from other tabs
+      let latestStorageList: EvidenceItem[] = [];
+      const saved = localStorage.getItem(EVIDENCE_STORAGE_KEY);
+      if (saved) {
+        try {
+          const parsed = JSON.parse(saved);
+          if (Array.isArray(parsed)) {
+            latestStorageList = parsed;
+          }
+        } catch (e) {
+          console.error('Error parsing storage list:', e);
+        }
+      }
+
+      // Merge latest storage items and local list without duplicates
+      const mergedMap = new Map<string, EvidenceItem>();
+      [...latestStorageList, ...currentList].forEach((item) => {
+        if (!mergedMap.has(item.id)) {
+          mergedMap.set(item.id, item);
+        }
+      });
+      const mergedList = Array.from(mergedMap.values());
+
+      // Check if filename was concurrently added by another tab
+      const isDuplicateFinal = mergedList.some(
+        (item) => item.fileName.toLowerCase() === trimmedFileName.toLowerCase() ||
+                  item.name.toLowerCase() === trimmedFileName.toLowerCase()
+      );
+
+      if (isDuplicateFinal) {
+        setUploadError('Evidence already added.');
+        setIsUploading(false);
+        return;
+      }
+
+      const updatedList = [newItem, ...mergedList.filter((item) => item.id !== newItem.id)];
       localStorage.setItem(EVIDENCE_STORAGE_KEY, JSON.stringify(updatedList));
       setEvidenceList(updatedList);
       setMockFileName('');
       setIsUploading(false);
       setShowUploadModal(false);
+    };
+
+    try {
+      if (typeof navigator !== 'undefined' && 'locks' in navigator && navigator.locks?.request) {
+        await navigator.locks.request('msme_evidence_storage_lock', executeSave);
+      } else {
+        await executeSave();
+      }
     } catch (err) {
       console.error('Error saving evidence list to localStorage:', err);
       setUploadError('Failed to save evidence record. Please try again.');
