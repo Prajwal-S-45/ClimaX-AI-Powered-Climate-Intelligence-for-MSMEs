@@ -41,6 +41,8 @@ export const Slider: React.FC<SliderProps> = ({
         step={step}
         value={value}
         onChange={(e) => onChange(Number(e.target.value))}
+        aria-label={label}
+        aria-valuetext={valueFormat(value)}
         className="w-full h-2 bg-slate-200 rounded-lg appearance-none cursor-pointer accent-emerald-600 focus:outline-none focus:ring-2 focus:ring-emerald-500/20"
       />
       {(minLabel || maxLabel) && (
