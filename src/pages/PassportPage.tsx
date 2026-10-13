@@ -20,13 +20,13 @@ import { useClimate } from '../context/ClimateContext';
 import { formatCurrencyINR } from '../utils/helpers';
 
 export const PassportPage: React.FC = () => {
-  const { profile, activeBundle } = useClimate();
+  const { profile, activeBundle, budget } = useClimate();
   const [copied, setCopied] = useState<boolean>(false);
 
   const passportId = 'CAP-2026-0001';
-  const bundleId = activeBundle?.id || 'bundle-a';
-  const targetBudget = activeBundle?.metrics?.totalInvestment || 100000;
-  const passportUrl = `${window.location.origin}/verify/${passportId}?bundle=${bundleId}&budget=${targetBudget}`;
+  const passportUrl = activeBundle
+    ? `${window.location.origin}/verify/${passportId}?bundle=${activeBundle.id}&budget=${budget}`
+    : `${window.location.origin}/verify/${passportId}`;
 
   const handlePrint = () => {
     window.print();
