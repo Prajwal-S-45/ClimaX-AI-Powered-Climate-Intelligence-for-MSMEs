@@ -41,10 +41,20 @@ export const ClimateProvider: React.FC<{ children: React.ReactNode }> = ({ child
       const saved = localStorage.getItem(STORAGE_KEY);
       if (saved) {
         const parsed = JSON.parse(saved);
-        const validBudget = (parsed.budget && parsed.budget !== 300000) ? Number(parsed.budget) : 100000;
-        const validBundleId = (parsed.selectedBundleId && parsed.selectedBundleId !== 'bundle-b') ? parsed.selectedBundleId : 'bundle-a';
+        const storedBudget = Number(parsed.budget ?? parsed.profile?.availableBudgetINR ?? defaultProfile.availableBudgetINR);
+        const validBudget = Number.isFinite(storedBudget) && storedBudget >= 0
+          ? storedBudget
+          : Number(defaultProfile.availableBudgetINR);
+        const validBundleId = typeof parsed.selectedBundleId === 'string' && parsed.selectedBundleId.length > 0
+          ? parsed.selectedBundleId
+          : 'bundle-a';
+        const restoredProfile = {
+          ...defaultProfile,
+          ...(parsed.profile ?? {}),
+          availableBudgetINR: validBudget,
+        };
 
-        if (parsed.profile) setProfileState({ ...defaultProfile, ...parsed.profile, availableBudgetINR: validBudget });
+        setProfileState(restoredProfile);
         setBudgetState(validBudget);
         setSelectedBundleIdState(validBundleId);
         if (parsed.operatingHours !== undefined) setOperatingHoursState(Number(parsed.operatingHours));
@@ -54,7 +64,10 @@ export const ClimateProvider: React.FC<{ children: React.ReactNode }> = ({ child
         const legacyProfile = localStorage.getItem('msme_climate_profile');
         if (legacyProfile) {
           const parsed = JSON.parse(legacyProfile);
-          const validBudget = (parsed.availableBudgetINR && parsed.availableBudgetINR !== 300000) ? Number(parsed.availableBudgetINR) : 100000;
+          const storedBudget = Number(parsed.availableBudgetINR ?? defaultProfile.availableBudgetINR);
+          const validBudget = Number.isFinite(storedBudget) && storedBudget >= 0
+            ? storedBudget
+            : Number(defaultProfile.availableBudgetINR);
           setProfileState({ ...defaultProfile, ...parsed, availableBudgetINR: validBudget });
           setBudgetState(validBudget);
           setSelectedBundleIdState('bundle-a');
@@ -101,8 +114,11 @@ export const ClimateProvider: React.FC<{ children: React.ReactNode }> = ({ child
   };
 
   const setBudget = (newBudget: number) => {
+    if (!Number.isFinite(newBudget) || newBudget < 0) return;
+    const updatedProfile = { ...profile, availableBudgetINR: newBudget };
     setBudgetState(newBudget);
-    saveState({ budget: newBudget });
+    setProfileState(updatedProfile);
+    saveState({ budget: newBudget, profile: updatedProfile });
   };
 
   const setSelectedBundleId = (bundleId: string) => {

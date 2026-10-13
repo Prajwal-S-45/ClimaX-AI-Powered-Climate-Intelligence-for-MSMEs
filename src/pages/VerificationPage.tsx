@@ -30,13 +30,12 @@ export const VerificationPage: React.FC = () => {
 
   // Demo values for standalone verification matching encoded passport URL identity
   const demoProfile = defaultProfile;
-  const targetBudget = budgetParam && !isNaN(Number(budgetParam)) ? Number(budgetParam) : 100000;
+  const targetBudget = (() => { const n = Number(budgetParam); return Number.isFinite(n) && n > 0 ? n : 100000; })();
   const allBundles = getBundlesForBudget(targetBudget);
-  const demoBundle =
-    (bundleParam ? allBundles.find((b) => b.id === bundleParam) : null) ||
-    allBundles.find((b) => b.id === 'bundle-a') ||
-    allBundles[0] ||
-    null;
+  const defaultBundle = allBundles[0] || null;
+  const demoBundle = bundleParam !== null
+    ? allBundles.find((b) => b.id === bundleParam) || null
+    : defaultBundle;
 
   const verificationUrl = `${window.location.origin}/verify/${passportId}${window.location.search}`;
 
